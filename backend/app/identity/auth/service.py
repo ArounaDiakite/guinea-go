@@ -31,7 +31,7 @@ class AuthService:
         user_data["password"] = hash_password(data.password)
 
         # Informations utilisateur
-        user_data["role"] = UserRole.CUSTOMER
+        user_data["role"] = UserRole.PASSENGER
         user_data["is_active"] = True
         user_data["is_verified"] = False
         user_data["profile_picture"] = None

@@ -1,12 +1,8 @@
-from enum import Enum
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
 
-
-class UserRole(str, Enum):
-    ADMIN = "admin"
-    CUSTOMER = "customer"
-    COMPANY = "company"
+from app.core.constants import UserRole
+from app.core.utils import utc_now
 
 
 class User(BaseModel):
@@ -22,8 +18,8 @@ class User(BaseModel):
     city: str
     country: str = "Guinea"
 
-    role: UserRole = UserRole.CUSTOMER
+    role: UserRole = UserRole.PASSENGER
 
     is_active: bool = True
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
