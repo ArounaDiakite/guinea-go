@@ -1,0 +1,55 @@
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Query
+
+from app.core.dependencies import get_current_user
+from app.modules.hotels.rooms.schemas import RoomCreate, RoomResponse
+from app.modules.hotels.rooms.service import RoomService
+
+router = APIRouter(
+    prefix="/rooms",
+    tags=["Rooms"],
+)
+
+service = RoomService()
+
+
+@router.post("/", response_model=RoomResponse)
+async def create_room(
+    data: RoomCreate,
+    current_user=Depends(get_current_user),
+):
+    return await service.create_room(data, current_user["sub"])
+
+
+@router.get("/", response_model=list[RoomResponse])
+async def get_rooms(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    hotel_id: Optional[str] = None,
+    room_type: Optional[str] = None,
+    status: Optional[str] = None,
+):
+    return await service.get_rooms(page, limit, hotel_id, room_type, status)
+
+
+@router.get("/{room_id}", response_model=RoomResponse)
+async def get_room(room_id: str):
+    return await service.get_room(room_id)
+
+
+@router.put("/{room_id}", response_model=RoomResponse)
+async def update_room(
+    room_id: str,
+    data: RoomCreate,
+    current_user=Depends(get_current_user),
+):
+    return await service.update_room(room_id, data, current_user["sub"])
+
+
+@router.delete("/{room_id}")
+async def delete_room(
+    room_id: str,
+    current_user=Depends(get_current_user),
+):
+    return await service.delete_room(room_id, current_user["sub"])
