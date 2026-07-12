@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import require_permission
 from app.modules.hotels.hotels.schemas import HotelCreate, HotelResponse
 from app.modules.hotels.hotels.service import HotelService
 
@@ -17,7 +17,7 @@ service = HotelService()
 @router.post("/", response_model=HotelResponse)
 async def create_hotel(
     data: HotelCreate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("hotels:manage")),
 ):
     return await service.create_hotel(data, current_user["sub"])
 
@@ -41,7 +41,7 @@ async def get_hotel(hotel_id: str):
 async def update_hotel(
     hotel_id: str,
     data: HotelCreate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("hotels:manage")),
 ):
     return await service.update_hotel(hotel_id, data, current_user["sub"])
 
@@ -49,6 +49,6 @@ async def update_hotel(
 @router.delete("/{hotel_id}")
 async def delete_hotel(
     hotel_id: str,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("hotels:manage")),
 ):
     return await service.delete_hotel(hotel_id, current_user["sub"])

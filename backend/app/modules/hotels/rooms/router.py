@@ -2,7 +2,8 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from app.core.dependencies import get_current_user
+from app.core.constants import UserRole
+from app.core.dependencies import require_permission, require_role
 from app.modules.hotels.reservations.schemas import HotelBookingCreate, HotelBookingResponse
 from app.modules.hotels.reservations.service import HotelBookingService
 from app.modules.hotels.rooms.schemas import RoomCreate, RoomResponse
@@ -20,7 +21,7 @@ booking_service = HotelBookingService()
 @router.post("/", response_model=RoomResponse)
 async def create_room(
     data: RoomCreate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("rooms:manage")),
 ):
     return await service.create_room(data, current_user["sub"])
 
@@ -45,7 +46,7 @@ async def get_room(room_id: str):
 async def update_room(
     room_id: str,
     data: RoomCreate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("rooms:manage")),
 ):
     return await service.update_room(room_id, data, current_user["sub"])
 
@@ -53,7 +54,7 @@ async def update_room(
 @router.delete("/{room_id}")
 async def delete_room(
     room_id: str,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("rooms:manage")),
 ):
     return await service.delete_room(room_id, current_user["sub"])
 
@@ -62,6 +63,6 @@ async def delete_room(
 async def create_booking(
     room_id: str,
     data: HotelBookingCreate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_role(UserRole.PASSENGER)),
 ):
     return await booking_service.create_booking(room_id, data, current_user["sub"])
