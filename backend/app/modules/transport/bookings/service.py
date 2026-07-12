@@ -5,6 +5,7 @@ from app.common.base_model import BaseDocument
 from app.core.utils import utc_now
 from app.modules.transport.bookings.repository import BookingRepository
 from app.modules.transport.bookings.schemas import BookingCreate
+from app.modules.transport.pricing.service import PricingService
 from app.modules.transport.seats.repository import SeatRepository
 from app.modules.transport.trips.repository import TripRepository
 
@@ -22,6 +23,7 @@ class BookingService:
         self.repository = BookingRepository()
         self.trip_repository = TripRepository()
         self.seat_repository = SeatRepository()
+        self.pricing_service = PricingService()
 
     async def create_booking(self, trip_id: str, data: BookingCreate, passenger_id: str):
         trip = await self.trip_repository.get_by_id(trip_id)
@@ -56,13 +58,19 @@ class BookingService:
         if claimed is None:
             raise SeatAlreadyReservedException()
 
+        # Computed and stored on the booking now, so it stays historically
+        # accurate even if the route's base_price changes later.
+        price_paid = self.pricing_service.calculate_seat_price(
+            trip["price"], seat["seat_type"]
+        )
+
         booking_doc = {
             "_id": booking_id,
             "trip_id": trip_id,
             "seat_id": data.seat_id,
             "passenger_id": passenger_id,
             "status": "CONFIRMED",
-            "price_paid": trip["price"],
+            "price_paid": price_paid,
         }
         booking_doc.update(BaseDocument.create())
 

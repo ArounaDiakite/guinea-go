@@ -148,6 +148,9 @@ class TripService:
         trip["available_seats"] = bus["seat_capacity"]
         trip["booked_seats"] = 0
 
+        if trip["price"] is None:
+            trip["price"] = route["base_price"]
+
         trip["status"] = trip["status"].value
         trip.update(BaseDocument.create())
 
@@ -306,6 +309,9 @@ class TripService:
                 arrival_datetime += timedelta(days=1)
 
             update_data["estimated_arrival_datetime"] = arrival_datetime
+
+        if update_data["price"] is None:
+            update_data["price"] = route["base_price"]
 
         update_data["status"] = update_data["status"].value
         update_data.update(BaseDocument.update())

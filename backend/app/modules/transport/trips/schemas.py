@@ -23,7 +23,9 @@ class TripCreate(BaseModel):
 
     travel_date: date
 
-    price: float = Field(..., ge=0)
+    # Defaults to the route's base_price when omitted; set explicitly here
+    # only to override it for this specific trip (e.g. a one-off surge).
+    price: Optional[float] = Field(None, ge=0)
     notes: Optional[str] = None
 
     status: TripStatus = TripStatus.SCHEDULED

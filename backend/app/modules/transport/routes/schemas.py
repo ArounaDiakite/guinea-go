@@ -15,6 +15,8 @@ class RouteCreate(BaseModel):
     distance_km: float = Field(..., gt=0)
     estimated_duration_minutes: int = Field(..., gt=0)
 
+    base_price: float = Field(..., gt=0)
+
     description: Optional[str] = None
 
 
@@ -29,6 +31,8 @@ class RouteResponse(BaseModel):
 
     distance_km: float
     estimated_duration_minutes: int
+
+    base_price: float
 
     description: Optional[str] = None
 

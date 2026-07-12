@@ -31,9 +31,8 @@ class SeatResponse(BaseModel):
 
 class TripSeatResponse(BaseModel):
     """A seat's availability for one specific trip, not the bus in
-    general. Reflects the seat's own MAINTENANCE status (out of service
-    on every trip) as-is; RESERVED will start showing up here once the
-    bookings module can flag a seat as taken for a given trip_id."""
+    general: MAINTENANCE carries over from the seat's own bus-level
+    status, RESERVED comes from an active booking for this trip_id."""
 
     seat_id: str
     seat_number: str

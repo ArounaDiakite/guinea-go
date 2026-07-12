@@ -222,6 +222,7 @@ class RouteService:
             "destination_station_id": route["destination_station_id"],
             "distance_km": route["distance_km"],
             "estimated_duration_minutes": route["estimated_duration_minutes"],
+            "base_price": route["base_price"],
             "description": route.get("description"),
             "is_active": route["is_active"],
             "created_at": route.get("created_at"),
