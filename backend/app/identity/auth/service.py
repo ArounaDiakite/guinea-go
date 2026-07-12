@@ -5,6 +5,7 @@ from app.core.exceptions import (
     EmailAlreadyExistsException,
     InvalidCredentialsException,
 )
+from app.core.permissions import get_permissions_for_role
 from app.core.security import (
     create_access_token,
     hash_password,
@@ -49,13 +50,7 @@ class AuthService:
         user = await self.repository.create_user(user_data)
 
         # Génération du JWT
-        token = create_access_token(
-            {
-                "sub": str(user["_id"]),
-                "email": user["email"],
-                "role": user["role"],
-            }
-        )
+        token = create_access_token(self._build_token_payload(user))
 
         return {
             "access_token": token,
@@ -72,18 +67,21 @@ class AuthService:
         if not verify_password(data.password, user["password"]):
             raise InvalidCredentialsException()
 
-        token = create_access_token(
-            {
-                "sub": str(user["_id"]),
-                "email": user["email"],
-                "role": user["role"],
-            }
-        )
+        token = create_access_token(self._build_token_payload(user))
 
         return {
             "access_token": token,
             "token_type": "bearer",
             "user": self._format_user(user),
+        }
+
+    def _build_token_payload(self, user):
+        return {
+            "sub": str(user["_id"]),
+            "email": user["email"],
+            "role": user["role"],
+            "permissions": get_permissions_for_role(user["role"]),
+            "company_id": user.get("company_id"),
         }
 
     def _format_user(self, user):
