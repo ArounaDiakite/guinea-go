@@ -3,6 +3,7 @@ from datetime import datetime, date
 from fastapi import HTTPException
 
 from app.common.base_model import BaseDocument
+from app.core.permissions import ensure_owner
 from app.modules.companies.repository import CompanyRepository
 from app.modules.transport.routes.repository import RouteRepository
 from app.modules.transport.schedules.repository import ScheduleRepository
@@ -21,8 +22,7 @@ class ScheduleService:
         if not company:
             raise HTTPException(status_code=404, detail="Company not found.")
 
-        if company["owner_id"] != user_id:
-            raise HTTPException(status_code=403, detail="Not allowed.")
+        ensure_owner(company["owner_id"], user_id)
 
         route = await self.route_repository.get_by_id(data.route_id)
 
@@ -97,8 +97,10 @@ class ScheduleService:
 
         company = await self.company_repository.get_by_id(schedule["company_id"])
 
-        if not company or company["owner_id"] != user_id:
+        if not company:
             raise HTTPException(status_code=403, detail="Not allowed.")
+
+        ensure_owner(company["owner_id"], user_id)
 
         route = await self.route_repository.get_by_id(data.route_id)
 
@@ -141,8 +143,10 @@ class ScheduleService:
 
         company = await self.company_repository.get_by_id(schedule["company_id"])
 
-        if not company or company["owner_id"] != user_id:
+        if not company:
             raise HTTPException(status_code=403, detail="Not allowed.")
+
+        ensure_owner(company["owner_id"], user_id)
 
         deleted = await self.repository.soft_delete(
             schedule_id,

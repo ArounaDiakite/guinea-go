@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_permission
 from app.modules.transport.bookings.schemas import BookingCreate, BookingResponse
 from app.modules.transport.bookings.service import BookingService
 from app.modules.transport.seats.schemas import TripSeatResponse
@@ -24,7 +24,7 @@ booking_service = BookingService()
 @router.post("/", response_model=TripResponse)
 async def create_trip(
     data: TripCreate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("trips:manage")),
 ):
     return await service.create_trip(
         data,
@@ -74,7 +74,7 @@ async def create_booking(
 async def update_trip(
     trip_id: str,
     data: TripCreate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("trips:manage")),
 ):
     return await service.update_trip(
         trip_id,
@@ -86,7 +86,7 @@ async def update_trip(
 @router.delete("/{trip_id}")
 async def delete_trip(
     trip_id: str,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("trips:manage")),
 ):
     return await service.delete_trip(
         trip_id,

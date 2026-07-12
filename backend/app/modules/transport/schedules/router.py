@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import require_permission
 from app.modules.transport.schedules.schemas import ScheduleCreate, ScheduleResponse
 from app.modules.transport.schedules.service import ScheduleService
 
@@ -17,7 +17,7 @@ service = ScheduleService()
 @router.post("/", response_model=ScheduleResponse)
 async def create_schedule(
     data: ScheduleCreate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("schedules:manage")),
 ):
     return await service.create_schedule(data, current_user["sub"])
 
@@ -42,7 +42,7 @@ async def get_schedule(schedule_id: str):
 async def update_schedule(
     schedule_id: str,
     data: ScheduleCreate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("schedules:manage")),
 ):
     return await service.update_schedule(schedule_id, data, current_user["sub"])
 
@@ -50,6 +50,6 @@ async def update_schedule(
 @router.delete("/{schedule_id}")
 async def delete_schedule(
     schedule_id: str,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("schedules:manage")),
 ):
     return await service.delete_schedule(schedule_id, current_user["sub"])

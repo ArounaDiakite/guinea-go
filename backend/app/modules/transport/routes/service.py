@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 
 from app.common.base_model import BaseDocument
+from app.core.permissions import ensure_owner
 from app.modules.companies.repository import CompanyRepository
 from app.modules.transport.routes.repository import RouteRepository
 from app.modules.transport.routes.schemas import RouteCreate
@@ -30,11 +31,7 @@ class RouteService:
                 detail="Company not found.",
             )
 
-        if company["owner_id"] != user_id:
-            raise HTTPException(
-                status_code=403,
-                detail="Not allowed.",
-            )
+        ensure_owner(company["owner_id"], user_id)
 
         origin = await self.station_repository.get_by_id(
             data.origin_station_id
@@ -121,11 +118,7 @@ class RouteService:
                 detail="Company not found.",
             )
 
-        if company["owner_id"] != user_id:
-            raise HTTPException(
-                status_code=403,
-                detail="Not allowed.",
-            )
+        ensure_owner(company["owner_id"], user_id)
 
         origin = await self.station_repository.get_by_id(
             data.origin_station_id
@@ -187,11 +180,7 @@ class RouteService:
                 detail="Company not found.",
             )
 
-        if company["owner_id"] != user_id:
-            raise HTTPException(
-                status_code=403,
-                detail="Not allowed.",
-            )
+        ensure_owner(company["owner_id"], user_id)
 
         deleted = await self.repository.soft_delete(
             route_id,

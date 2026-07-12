@@ -3,6 +3,7 @@ from datetime import datetime, time
 from fastapi import HTTPException
 
 from app.common.base_model import BaseDocument
+from app.core.permissions import ensure_owner
 from app.modules.companies.repository import CompanyRepository
 from app.modules.transport.buses.repository import BusRepository
 from app.modules.transport.drivers.repository import DriverRepository
@@ -30,11 +31,7 @@ class TripService:
                 detail="Company not found.",
             )
 
-        if company["owner_id"] != user_id:
-            raise HTTPException(
-                status_code=403,
-                detail="You are not allowed to create a trip for this company.",
-            )
+        ensure_owner(company["owner_id"], user_id)
 
         route = await self.route_repository.get_by_id(data.route_id)
 
@@ -215,11 +212,13 @@ class TripService:
             existing_trip["company_id"]
         )
 
-        if not company or company["owner_id"] != user_id:
+        if not company:
             raise HTTPException(
                 status_code=403,
                 detail="You are not allowed to update this trip.",
             )
+
+        ensure_owner(company["owner_id"], user_id)
 
         route = await self.route_repository.get_by_id(data.route_id)
 
@@ -336,11 +335,13 @@ class TripService:
             trip["company_id"]
         )
 
-        if not company or company["owner_id"] != user_id:
+        if not company:
             raise HTTPException(
                 status_code=403,
                 detail="You are not allowed to delete this trip.",
             )
+
+        ensure_owner(company["owner_id"], user_id)
 
         if trip.get("booked_seats", 0) > 0:
             raise HTTPException(

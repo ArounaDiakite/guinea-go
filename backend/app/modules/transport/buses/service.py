@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 
 from app.common.base_model import BaseDocument
+from app.core.permissions import ensure_owner
 from app.modules.companies.repository import CompanyRepository
 from app.modules.transport.buses.repository import BusRepository
 from app.modules.transport.buses.schemas import BusCreate
@@ -17,8 +18,7 @@ class BusService:
         if not company:
             raise HTTPException(status_code=404, detail="Company not found.")
 
-        if company["owner_id"] != user_id:
-            raise HTTPException(status_code=403, detail="Not allowed.")
+        ensure_owner(company["owner_id"], user_id)
 
         bus = data.model_dump()
         bus["bus_type"] = bus["bus_type"].value
@@ -49,8 +49,10 @@ class BusService:
 
         company = await self.company_repository.get_by_id(bus["company_id"])
 
-        if not company or company["owner_id"] != user_id:
+        if not company:
             raise HTTPException(status_code=403, detail="Not allowed.")
+
+        ensure_owner(company["owner_id"], user_id)
 
         update_data = data.model_dump()
         update_data["bus_type"] = update_data["bus_type"].value
@@ -68,8 +70,10 @@ class BusService:
 
         company = await self.company_repository.get_by_id(bus["company_id"])
 
-        if not company or company["owner_id"] != user_id:
+        if not company:
             raise HTTPException(status_code=403, detail="Not allowed.")
+
+        ensure_owner(company["owner_id"], user_id)
 
         deleted = await self.repository.soft_delete(
             bus_id,

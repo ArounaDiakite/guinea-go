@@ -20,6 +20,7 @@ ROLE_PERMISSIONS: dict[UserRole, set[str]] = {
         "stations:manage",
         "routes:manage",
         "schedules:manage",
+        "trips:manage",
         "reports:view",
     },
     UserRole.DRIVER: {

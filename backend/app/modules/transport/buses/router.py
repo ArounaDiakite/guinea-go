@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_permission
 from app.modules.transport.buses.schemas import BusCreate, BusResponse
 from app.modules.transport.buses.service import BusService
 from app.modules.transport.seats.schemas import SeatResponse
@@ -20,7 +20,7 @@ seat_service = SeatService()
 @router.post("/", response_model=BusResponse)
 async def create_bus(
     data: BusCreate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("buses:manage")),
 ):
     return await service.create_bus(
         data,
@@ -54,7 +54,7 @@ async def get_bus(bus_id: str):
 async def update_bus(
     bus_id: str,
     data: BusCreate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("buses:manage")),
 ):
     return await service.update_bus(
         bus_id,
@@ -66,7 +66,7 @@ async def update_bus(
 @router.delete("/{bus_id}")
 async def delete_bus(
     bus_id: str,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("buses:manage")),
 ):
     return await service.delete_bus(
         bus_id,
