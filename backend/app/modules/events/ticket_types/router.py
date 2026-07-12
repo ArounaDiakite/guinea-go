@@ -3,6 +3,8 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 
 from app.core.dependencies import get_current_user
+from app.modules.events.bookings.schemas import EventBookingCreate, EventBookingResponse
+from app.modules.events.bookings.service import EventBookingService
 from app.modules.events.ticket_types.schemas import TicketTypeCreate, TicketTypeResponse
 from app.modules.events.ticket_types.service import TicketTypeService
 
@@ -12,6 +14,7 @@ router = APIRouter(
 )
 
 service = TicketTypeService()
+booking_service = EventBookingService()
 
 
 @router.post("/", response_model=TicketTypeResponse)
@@ -52,3 +55,12 @@ async def delete_ticket_type(
     current_user=Depends(get_current_user),
 ):
     return await service.delete_ticket_type(ticket_type_id, current_user["sub"])
+
+
+@router.post("/{ticket_type_id}/bookings", response_model=EventBookingResponse)
+async def create_booking(
+    ticket_type_id: str,
+    data: EventBookingCreate,
+    current_user=Depends(get_current_user),
+):
+    return await booking_service.create_booking(ticket_type_id, data, current_user["sub"])

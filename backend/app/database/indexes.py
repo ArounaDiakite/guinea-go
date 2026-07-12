@@ -61,3 +61,16 @@ async def create_indexes():
     await db.rooms.create_index("status")
     await db.hotel_bookings.create_index("passenger_id")
     await db.hotel_bookings.create_index([("room_id", 1), ("status", 1)])
+
+    # Events / TicketTypes / event_bookings - fields filtered on in their
+    # respective get_all() queries. No per-unit concurrency-control
+    # collection needed here (unlike trip_seats/room_nights): a ticket
+    # has no individual identity, so the atomic claim is a single
+    # find_one_and_update on ticket_types.quantity_available itself -
+    # nothing to index beyond the implicit _id lookup that's already
+    # covered by the default _id index.
+    await db.events.create_index("city")
+    await db.events.create_index("category")
+    await db.ticket_types.create_index("event_id")
+    await db.event_bookings.create_index("passenger_id")
+    await db.event_bookings.create_index([("ticket_type_id", 1), ("status", 1)])

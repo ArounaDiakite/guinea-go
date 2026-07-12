@@ -4,6 +4,7 @@ import uuid
 from fastapi import HTTPException
 
 from app.common.base_model import BaseDocument
+from app.modules.events.bookings.repository import EventBookingRepository
 from app.modules.hotels.reservations.repository import HotelBookingRepository
 from app.modules.transport.bookings.repository import BookingRepository
 from app.payments.repository import PaymentRepository
@@ -28,6 +29,7 @@ class PaymentService:
         self.booking_repositories = {
             "transport": BookingRepository(),
             "hotel": HotelBookingRepository(),
+            "event": EventBookingRepository(),
         }
 
     def _booking_repository(self, booking_type: str):
