@@ -73,9 +73,33 @@ class BookingRepository:
         )
         return await cursor.to_list(length=limit)
 
-    async def update_status(self, booking_id: str, data: dict):
-        await self.collection.update_one(
-            {"_id": ObjectId(booking_id)},
+    async def get_stale_pending_bookings(self, trip_id: str, now):
+        cursor = self.collection.find(
+            {
+                "trip_id": trip_id,
+                "status": "PENDING_PAYMENT",
+                "expires_at": {"$lte": now},
+            }
+        )
+        return await cursor.to_list(length=None)
+
+    async def transition_status_if(
+        self,
+        booking_id: str,
+        expected_statuses: list[str] | str,
+        data: dict,
+    ) -> bool:
+        """Conditional update: only applies `data` if the booking is
+        currently in one of `expected_statuses`. Returns whether it
+        actually transitioned - used to make cancel/expire/confirm
+        idempotent and safe when triggered concurrently from more than
+        one place (e.g. two requests both noticing the same expired
+        booking at once)."""
+        if isinstance(expected_statuses, str):
+            expected_statuses = [expected_statuses]
+
+        result = await self.collection.update_one(
+            {"_id": ObjectId(booking_id), "status": {"$in": expected_statuses}},
             {"$set": data},
         )
-        return await self.get_by_id(booking_id)
+        return result.modified_count > 0

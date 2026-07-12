@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from app.common.base_model import BaseDocument
 from app.modules.companies.repository import CompanyRepository
 from app.modules.transport.bookings.repository import BookingRepository
+from app.modules.transport.bookings.service import BookingService
 from app.modules.transport.buses.repository import BusRepository
 from app.modules.transport.seats.repository import SeatRepository
 from app.modules.transport.seats.schemas import SeatStatus, SeatType
@@ -16,6 +17,7 @@ class SeatService:
         self.company_repository = CompanyRepository()
         self.trip_repository = TripRepository()
         self.booking_repository = BookingRepository()
+        self.booking_service = BookingService()
 
     async def generate_seats(self, bus_id: str, user_id: str):
         bus = await self.bus_repository.get_by_id(bus_id)
@@ -73,6 +75,11 @@ class SeatService:
 
         if not trip:
             raise HTTPException(status_code=404, detail="Trip not found.")
+
+        # Release any abandoned PENDING_PAYMENT holds before reporting
+        # seat availability, so this reflects reality even if nobody has
+        # tried to (re)book the seat since it expired.
+        await self.booking_service.expire_stale_bookings(trip_id)
 
         seats = await self.repository.get_by_bus(trip["bus_id"])
         reserved_seat_ids = await self.booking_repository.get_reserved_seat_ids(trip_id)

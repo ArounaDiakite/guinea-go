@@ -6,8 +6,10 @@ from pydantic import BaseModel
 
 
 class BookingStatus(str, Enum):
+    PENDING_PAYMENT = "PENDING_PAYMENT"
     CONFIRMED = "CONFIRMED"
     CANCELLED = "CANCELLED"
+    EXPIRED = "EXPIRED"
 
 
 class BookingCreate(BaseModel):
@@ -21,5 +23,6 @@ class BookingResponse(BaseModel):
     passenger_id: str
     status: BookingStatus
     price_paid: float
+    expires_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
