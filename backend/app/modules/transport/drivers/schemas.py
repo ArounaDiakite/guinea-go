@@ -4,6 +4,8 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
+from app.identity.auth.schemas import RegisterRequest, UserResponse
+
 
 class DriverStatus(str, Enum):
     AVAILABLE = "AVAILABLE"
@@ -60,6 +62,7 @@ class DriverCreate(BaseModel):
 class DriverResponse(BaseModel):
     id: str
     company_id: str
+    user_id: Optional[str] = None
     employee_number: str
 
     first_name: str
@@ -92,3 +95,43 @@ class DriverResponse(BaseModel):
 
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+
+class DriverProfileCreate(BaseModel):
+    """Driver business-profile fields for the combined
+    account + profile creation flow (POST /companies/{id}/drivers).
+    Excludes company_id (from the URL) and identity fields already
+    covered by DriverAccountCreate's RegisterRequest base."""
+
+    employee_number: str = Field(..., min_length=2, max_length=50)
+
+    gender: DriverGender
+    date_of_birth: date
+
+    license_number: str = Field(..., min_length=3, max_length=100)
+    license_category: LicenseCategory
+    license_issue_date: Optional[date] = None
+    license_expiry_date: date
+
+    years_of_experience: int = Field(0, ge=0, le=60)
+
+    nationality: Optional[str] = None
+    address: Optional[str] = None
+
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+
+    status: DriverStatus = DriverStatus.AVAILABLE
+
+
+class DriverAccountCreate(RegisterRequest):
+    """Request body for POST /companies/{company_id}/drivers: identity
+    credentials (inherited from RegisterRequest) plus the driver's
+    business profile."""
+
+    profile: DriverProfileCreate
+
+
+class DriverWithAccountResponse(BaseModel):
+    account: UserResponse
+    driver: DriverResponse

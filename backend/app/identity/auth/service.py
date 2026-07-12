@@ -93,8 +93,8 @@ class AuthService:
             "user": self._format_user(user),
         }
 
-    async def register_driver(self, company_id: str, data: RegisterRequest):
-        existing_user = await self.repository.get_user_by_email(data.email)
+    async def register_driver(self, company_id: str, data: RegisterRequest, session=None):
+        existing_user = await self.repository.get_user_by_email(data.email, session=session)
 
         if existing_user:
             raise EmailAlreadyExistsException()
@@ -118,9 +118,15 @@ class AuthService:
         user_data["updated_at"] = utc_now()
         user_data["last_login"] = None
 
-        user = await self.repository.create_user(user_data)
+        user = await self.repository.create_user(user_data, session=session)
 
         return self._format_user(user)
+
+    async def delete_account(self, user_id: str, session=None):
+        """Rollback helper for orchestrated, cross-module account creation
+        (e.g. companies/router.py creating a driver's auth account + business
+        profile together) when the second step fails."""
+        await self.repository.delete_user(user_id, session=session)
 
     async def login(self, data: LoginRequest):
         user = await self.repository.get_user_by_email(data.email)

@@ -7,18 +7,21 @@ class DriverRepository:
     def __init__(self):
         self.collection = db.drivers
 
-    async def create(self, data: dict):
-        result = await self.collection.insert_one(data)
-        return await self.get_by_id(str(result.inserted_id))
+    async def create(self, data: dict, session=None):
+        result = await self.collection.insert_one(data, session=session)
+        return await self.get_by_id(str(result.inserted_id), session=session)
 
-    async def get_by_id(self, driver_id: str):
+    async def get_by_id(self, driver_id: str, session=None):
         if not ObjectId.is_valid(driver_id):
             return None
 
-        return await self.collection.find_one({
-            "_id": ObjectId(driver_id),
-            "is_deleted": False,
-        })
+        return await self.collection.find_one(
+            {
+                "_id": ObjectId(driver_id),
+                "is_deleted": False,
+            },
+            session=session,
+        )
 
     async def get_all(
         self,

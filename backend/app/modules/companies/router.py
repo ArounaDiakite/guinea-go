@@ -7,10 +7,11 @@ from app.modules.companies.schemas import CompanyCreate, CompanyResponse
 from app.modules.companies.service import CompanyService
 from app.core.constants import UserRole
 from app.core.dependencies import get_current_user, require_role
-from app.identity.auth.schemas import RegisterRequest, UserResponse
-from app.identity.auth.service import AuthService
-
-auth_service = AuthService()
+from app.modules.transport.drivers.schemas import (
+    DriverAccountCreate,
+    DriverWithAccountResponse,
+)
+from app.modules.transport.drivers.service import DriverService
 
 router = APIRouter(
     prefix="/companies",
@@ -18,6 +19,7 @@ router = APIRouter(
 )
 
 service = CompanyService()
+driver_service = DriverService()
 
 
 @router.post("/", response_model=CompanyResponse)
@@ -68,10 +70,10 @@ async def upload_company_logo(
     return await service.upload_logo(company_id, current_user["sub"], file)
 
 
-@router.post("/{company_id}/drivers", response_model=UserResponse)
+@router.post("/{company_id}/drivers", response_model=DriverWithAccountResponse)
 async def create_driver(
     company_id: str,
-    data: RegisterRequest,
+    data: DriverAccountCreate,
     current_user=Depends(require_role(UserRole.COMPANY_OWNER)),
 ):
     company = await service.get_company(company_id)
@@ -82,4 +84,4 @@ async def create_driver(
             detail="Not allowed.",
         )
 
-    return await auth_service.register_driver(company_id, data)
+    return await driver_service.create_driver_with_account(company_id, data)
