@@ -1,7 +1,13 @@
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.identity.auth.schemas import RegisterRequest, LoginRequest, TokenResponse
+from app.identity.auth.schemas import (
+    LoginRequest,
+    PartnerRegisterResponse,
+    RegisterPartnerRequest,
+    RegisterRequest,
+    TokenResponse,
+)
 from app.identity.auth.service import AuthService
 
 router = APIRouter(
@@ -23,6 +29,11 @@ async def home():
 @router.post("/register", response_model=TokenResponse)
 async def register(data: RegisterRequest):
     return await service.register(data)
+
+
+@router.post("/register-partner", response_model=PartnerRegisterResponse)
+async def register_partner(data: RegisterPartnerRequest):
+    return await service.register_partner(data)
 
 
 @router.post("/login", response_model=TokenResponse)

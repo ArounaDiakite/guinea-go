@@ -1,11 +1,16 @@
 from fastapi import UploadFile, File
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.modules.companies.schemas import CompanyCreate, CompanyResponse
 from app.modules.companies.service import CompanyService
-from app.core.dependencies import get_current_user
+from app.core.constants import UserRole
+from app.core.dependencies import get_current_user, require_role
+from app.identity.auth.schemas import RegisterRequest, UserResponse
+from app.identity.auth.service import AuthService
+
+auth_service = AuthService()
 
 router = APIRouter(
     prefix="/companies",
@@ -61,3 +66,20 @@ async def upload_company_logo(
     current_user=Depends(get_current_user),
 ):
     return await service.upload_logo(company_id, current_user["sub"], file)
+
+
+@router.post("/{company_id}/drivers", response_model=UserResponse)
+async def create_driver(
+    company_id: str,
+    data: RegisterRequest,
+    current_user=Depends(require_role(UserRole.COMPANY_OWNER)),
+):
+    company = await service.get_company(company_id)
+
+    if company["owner_id"] != current_user["sub"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Not allowed.",
+        )
+
+    return await auth_service.register_driver(company_id, data)

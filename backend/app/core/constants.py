@@ -12,6 +12,16 @@ class UserRole(str, Enum):
     SYSTEM_ADMINISTRATOR = "system_administrator"
 
 
+# Roles that self-register via POST /auth/register-partner and require
+# admin validation (is_active=False) before they can log in.
+PARTNER_ROLES = {
+    UserRole.COMPANY_OWNER,
+    UserRole.HOTEL_OWNER,
+    UserRole.EVENT_ORGANIZER,
+    UserRole.STORE_MANAGER,
+}
+
+
 class BookingType:
     TRANSPORT = "transport"
     HOTEL = "hotel"

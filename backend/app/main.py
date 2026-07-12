@@ -13,6 +13,7 @@ from app.shared.countries.router import router as countries_router
 from app.shared.currencies.router import router as currencies_router
 from app.database.startup import init_database
 from app.identity.users.router import router as users_router
+from app.admin.router import router as admin_router
 
 app = FastAPI(
     title="Guinea Go API",
@@ -29,6 +30,7 @@ async def startup_event():
 
 
 app.include_router(auth_router)
+app.include_router(admin_router)
 app.include_router(users_router)
 app.include_router(countries_router)
 app.include_router(cities_router)

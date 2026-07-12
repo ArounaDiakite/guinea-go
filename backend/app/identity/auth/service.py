@@ -1,9 +1,14 @@
 from app.identity.auth.repository import AuthRepository
-from app.identity.auth.schemas import LoginRequest, RegisterRequest
+from app.identity.auth.schemas import (
+    LoginRequest,
+    RegisterPartnerRequest,
+    RegisterRequest,
+)
 from app.core.constants import UserRole
 from app.core.exceptions import (
     EmailAlreadyExistsException,
     InvalidCredentialsException,
+    PendingAccountException,
 )
 from app.core.permissions import get_permissions_for_role
 from app.core.security import (
@@ -58,6 +63,65 @@ class AuthService:
             "user": self._format_user(user),
         }
 
+    async def register_partner(self, data: RegisterPartnerRequest):
+        existing_user = await self.repository.get_user_by_email(data.email)
+
+        if existing_user:
+            raise EmailAlreadyExistsException()
+
+        user_data = data.model_dump()
+
+        user_data["password"] = hash_password(data.password)
+
+        # Compte partenaire : inactif tant qu'un system_administrator
+        # ne l'a pas validé via PATCH /admin/users/{id}/activate.
+        user_data["is_active"] = False
+        user_data["is_verified"] = False
+        user_data["profile_picture"] = None
+
+        user_data["country_code"] = data.country_code.upper()
+        user_data["preferred_language"] = data.preferred_language.lower()
+
+        user_data["created_at"] = utc_now()
+        user_data["updated_at"] = utc_now()
+        user_data["last_login"] = None
+
+        user = await self.repository.create_user(user_data)
+
+        return {
+            "message": "Compte créé avec succès. Il est en attente de validation par un administrateur.",
+            "user": self._format_user(user),
+        }
+
+    async def register_driver(self, company_id: str, data: RegisterRequest):
+        existing_user = await self.repository.get_user_by_email(data.email)
+
+        if existing_user:
+            raise EmailAlreadyExistsException()
+
+        user_data = data.model_dump()
+
+        user_data["password"] = hash_password(data.password)
+
+        # Créé directement par un company_owner déjà validé : pas
+        # besoin de validation admin supplémentaire.
+        user_data["role"] = UserRole.DRIVER
+        user_data["company_id"] = company_id
+        user_data["is_active"] = True
+        user_data["is_verified"] = False
+        user_data["profile_picture"] = None
+
+        user_data["country_code"] = data.country_code.upper()
+        user_data["preferred_language"] = data.preferred_language.lower()
+
+        user_data["created_at"] = utc_now()
+        user_data["updated_at"] = utc_now()
+        user_data["last_login"] = None
+
+        user = await self.repository.create_user(user_data)
+
+        return self._format_user(user)
+
     async def login(self, data: LoginRequest):
         user = await self.repository.get_user_by_email(data.email)
 
@@ -66,6 +130,9 @@ class AuthService:
 
         if not verify_password(data.password, user["password"]):
             raise InvalidCredentialsException()
+
+        if not user.get("is_active", True):
+            raise PendingAccountException()
 
         token = create_access_token(self._build_token_payload(user))
 

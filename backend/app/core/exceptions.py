@@ -17,6 +17,14 @@ class InvalidCredentialsException(HTTPException):
         )
 
 
+class PendingAccountException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Compte en attente de validation par un administrateur.",
+        )
+
+
 def not_found_exception(resource: str):
     return HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
