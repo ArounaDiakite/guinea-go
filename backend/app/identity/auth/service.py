@@ -1,0 +1,104 @@
+from app.identity.auth.repository import AuthRepository
+from app.identity.auth.schemas import LoginRequest, RegisterRequest
+from app.core.constants import UserRole
+from app.core.exceptions import (
+    EmailAlreadyExistsException,
+    InvalidCredentialsException,
+)
+from app.core.security import (
+    create_access_token,
+    hash_password,
+    verify_password,
+)
+from app.core.utils import utc_now
+
+
+class AuthService:
+    def __init__(self):
+        self.repository = AuthRepository()
+
+    async def register(self, data: RegisterRequest):
+        # Vérifier si l'utilisateur existe déjà
+        existing_user = await self.repository.get_user_by_email(data.email)
+
+        if existing_user:
+            raise EmailAlreadyExistsException()
+
+        # Convertir les données en dictionnaire
+        user_data = data.model_dump()
+
+        # Sécurité
+        user_data["password"] = hash_password(data.password)
+
+        # Informations utilisateur
+        user_data["role"] = UserRole.CUSTOMER
+        user_data["is_active"] = True
+        user_data["is_verified"] = False
+        user_data["profile_picture"] = None
+
+        # Multi-pays
+        user_data["country_code"] = data.country_code.upper()
+        user_data["preferred_language"] = data.preferred_language.lower()
+
+        # Dates
+        user_data["created_at"] = utc_now()
+        user_data["updated_at"] = utc_now()
+        user_data["last_login"] = None
+
+        # Sauvegarde MongoDB
+        user = await self.repository.create_user(user_data)
+
+        # Génération du JWT
+        token = create_access_token(
+            {
+                "sub": str(user["_id"]),
+                "email": user["email"],
+                "role": user["role"],
+            }
+        )
+
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "user": self._format_user(user),
+        }
+
+    async def login(self, data: LoginRequest):
+        user = await self.repository.get_user_by_email(data.email)
+
+        if not user:
+            raise InvalidCredentialsException()
+
+        if not verify_password(data.password, user["password"]):
+            raise InvalidCredentialsException()
+
+        token = create_access_token(
+            {
+                "sub": str(user["_id"]),
+                "email": user["email"],
+                "role": user["role"],
+            }
+        )
+
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "user": self._format_user(user),
+        }
+
+    def _format_user(self, user):
+        return {
+            "id": str(user["_id"]),
+            "first_name": user["first_name"],
+            "last_name": user["last_name"],
+            "email": user["email"],
+            "phone": user["phone"],
+            "city": user["city"],
+            "country_code": user.get("country_code", "GN"),
+            "preferred_language": user.get("preferred_language", "fr"),
+            "role": user["role"],
+            "is_active": user["is_active"],
+            "is_verified": user["is_verified"],
+            "profile_picture": user["profile_picture"],
+            "created_at": user["created_at"],
+        }
