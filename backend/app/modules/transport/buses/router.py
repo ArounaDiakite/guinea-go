@@ -5,6 +5,8 @@ from fastapi import APIRouter, Depends, Query
 from app.core.dependencies import get_current_user
 from app.modules.transport.buses.schemas import BusCreate, BusResponse
 from app.modules.transport.buses.service import BusService
+from app.modules.transport.seats.schemas import SeatResponse
+from app.modules.transport.seats.service import SeatService
 
 router = APIRouter(
     prefix="/buses",
@@ -12,6 +14,7 @@ router = APIRouter(
 )
 
 service = BusService()
+seat_service = SeatService()
 
 
 @router.post("/", response_model=BusResponse)
@@ -69,3 +72,11 @@ async def delete_bus(
         bus_id,
         current_user["sub"],
     )
+
+
+@router.post("/{bus_id}/generate-seats", response_model=list[SeatResponse])
+async def generate_seats(
+    bus_id: str,
+    current_user=Depends(get_current_user),
+):
+    return await seat_service.generate_seats(bus_id, current_user["sub"])

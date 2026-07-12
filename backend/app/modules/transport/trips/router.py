@@ -4,6 +4,8 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 
 from app.core.dependencies import get_current_user
+from app.modules.transport.seats.schemas import TripSeatResponse
+from app.modules.transport.seats.service import SeatService
 from app.modules.transport.trips.schemas import TripCreate, TripResponse
 from app.modules.transport.trips.service import TripService
 
@@ -13,6 +15,7 @@ router = APIRouter(
 )
 
 service = TripService()
+seat_service = SeatService()
 
 
 @router.post("/", response_model=TripResponse)
@@ -48,6 +51,11 @@ async def get_trips(
 @router.get("/{trip_id}", response_model=TripResponse)
 async def get_trip(trip_id: str):
     return await service.get_trip(trip_id)
+
+
+@router.get("/{trip_id}/seats", response_model=list[TripSeatResponse])
+async def get_trip_seats(trip_id: str):
+    return await seat_service.get_trip_seats(trip_id)
 
 
 @router.put("/{trip_id}", response_model=TripResponse)
