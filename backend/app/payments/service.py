@@ -4,6 +4,7 @@ import uuid
 from fastapi import HTTPException
 
 from app.common.base_model import BaseDocument
+from app.modules.hotels.reservations.repository import HotelBookingRepository
 from app.modules.transport.bookings.repository import BookingRepository
 from app.payments.repository import PaymentRepository
 from app.payments.schemas import PaymentCreate
@@ -20,10 +21,27 @@ _ACTIVE_PAYMENT_STATUSES = ("pending", "completed")
 class PaymentService:
     def __init__(self):
         self.repository = PaymentRepository()
-        self.booking_repository = BookingRepository()
+        # Both booking repositories expose the same get_by_id/
+        # transition_status_if shape, so this service stays agnostic to
+        # which domain a booking_id belongs to beyond picking the right
+        # repository for it.
+        self.booking_repositories = {
+            "transport": BookingRepository(),
+            "hotel": HotelBookingRepository(),
+        }
 
-    async def initiate_payment(self, booking_id: str, data: PaymentCreate, passenger_id: str):
-        booking = await self.booking_repository.get_by_id(booking_id)
+    def _booking_repository(self, booking_type: str):
+        return self.booking_repositories[booking_type]
+
+    async def initiate_payment(
+        self,
+        booking_id: str,
+        data: PaymentCreate,
+        passenger_id: str,
+        booking_type: str = "transport",
+    ):
+        booking_repository = self._booking_repository(booking_type)
+        booking = await booking_repository.get_by_id(booking_id)
 
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found.")
@@ -53,6 +71,7 @@ class PaymentService:
 
         payment_doc = {
             "booking_id": booking_id,
+            "booking_type": booking_type,
             "amount": data.amount,
             "currency": "GNF",
             "provider": data.provider.value,
@@ -78,7 +97,9 @@ class PaymentService:
         if not payment or payment["status"] != "pending":
             return
 
-        booking_confirmed = await self.booking_repository.transition_status_if(
+        booking_repository = self._booking_repository(payment.get("booking_type", "transport"))
+
+        booking_confirmed = await booking_repository.transition_status_if(
             payment["booking_id"],
             "PENDING_PAYMENT",
             {"status": "CONFIRMED", **BaseDocument.update()},
@@ -97,6 +118,7 @@ class PaymentService:
         return {
             "id": str(payment["_id"]),
             "booking_id": payment["booking_id"],
+            "booking_type": payment.get("booking_type", "transport"),
             "amount": payment["amount"],
             "currency": payment["currency"],
             "provider": payment["provider"],

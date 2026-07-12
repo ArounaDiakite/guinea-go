@@ -3,6 +3,8 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 
 from app.core.dependencies import get_current_user
+from app.modules.hotels.reservations.schemas import HotelBookingCreate, HotelBookingResponse
+from app.modules.hotels.reservations.service import HotelBookingService
 from app.modules.hotels.rooms.schemas import RoomCreate, RoomResponse
 from app.modules.hotels.rooms.service import RoomService
 
@@ -12,6 +14,7 @@ router = APIRouter(
 )
 
 service = RoomService()
+booking_service = HotelBookingService()
 
 
 @router.post("/", response_model=RoomResponse)
@@ -53,3 +56,12 @@ async def delete_room(
     current_user=Depends(get_current_user),
 ):
     return await service.delete_room(room_id, current_user["sub"])
+
+
+@router.post("/{room_id}/bookings", response_model=HotelBookingResponse)
+async def create_booking(
+    room_id: str,
+    data: HotelBookingCreate,
+    current_user=Depends(get_current_user),
+):
+    return await booking_service.create_booking(room_id, data, current_user["sub"])

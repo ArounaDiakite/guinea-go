@@ -46,3 +46,18 @@ async def create_indexes():
     await db.trips.create_index("route_id")
     await db.trips.create_index("status")
     await db.trips.create_index([("company_id", 1), ("travel_date", 1)])
+
+    # Concurrency-control pointer for hotel room bookings: one document
+    # per (room_id, night) actually claimed, which is what makes
+    # HotelBookingRepository.claim_nights' insert_many race-safe - a date
+    # range can't be a single compare-and-swap key like a trip+seat slot,
+    # so each night in the stay gets its own uniquely-indexed row.
+    await db.room_nights.create_index([("room_id", 1), ("night", 1)], unique=True)
+
+    # Hotels / Rooms / hotel_bookings - fields filtered on in their
+    # respective get_all()/has_overlap() queries.
+    await db.hotels.create_index("city")
+    await db.rooms.create_index("hotel_id")
+    await db.rooms.create_index("status")
+    await db.hotel_bookings.create_index("passenger_id")
+    await db.hotel_bookings.create_index([("room_id", 1), ("status", 1)])

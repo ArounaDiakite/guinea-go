@@ -37,6 +37,7 @@ class PaymentCreate(BaseModel):
 class PaymentResponse(BaseModel):
     id: str
     booking_id: str
+    booking_type: str
     amount: float
     currency: str
     provider: PaymentProvider
