@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import require_permission
 from app.modules.events.events.schemas import EventCreate, EventResponse
 from app.modules.events.events.service import EventService
 
@@ -17,7 +17,7 @@ service = EventService()
 @router.post("/", response_model=EventResponse)
 async def create_event(
     data: EventCreate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("events:manage")),
 ):
     return await service.create_event(data, current_user["sub"])
 
@@ -42,7 +42,7 @@ async def get_event(event_id: str):
 async def update_event(
     event_id: str,
     data: EventCreate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("events:manage")),
 ):
     return await service.update_event(event_id, data, current_user["sub"])
 
@@ -50,6 +50,6 @@ async def update_event(
 @router.delete("/{event_id}")
 async def delete_event(
     event_id: str,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("events:manage")),
 ):
     return await service.delete_event(event_id, current_user["sub"])

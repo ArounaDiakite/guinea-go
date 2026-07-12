@@ -2,7 +2,8 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from app.core.dependencies import get_current_user
+from app.core.constants import UserRole
+from app.core.dependencies import require_permission, require_role
 from app.modules.events.bookings.schemas import EventBookingCreate, EventBookingResponse
 from app.modules.events.bookings.service import EventBookingService
 from app.modules.events.ticket_types.schemas import TicketTypeCreate, TicketTypeResponse
@@ -20,7 +21,7 @@ booking_service = EventBookingService()
 @router.post("/", response_model=TicketTypeResponse)
 async def create_ticket_type(
     data: TicketTypeCreate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("events:manage")),
 ):
     return await service.create_ticket_type(data, current_user["sub"])
 
@@ -44,7 +45,7 @@ async def get_ticket_type(ticket_type_id: str):
 async def update_ticket_type(
     ticket_type_id: str,
     data: TicketTypeCreate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("events:manage")),
 ):
     return await service.update_ticket_type(ticket_type_id, data, current_user["sub"])
 
@@ -52,7 +53,7 @@ async def update_ticket_type(
 @router.delete("/{ticket_type_id}")
 async def delete_ticket_type(
     ticket_type_id: str,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("events:manage")),
 ):
     return await service.delete_ticket_type(ticket_type_id, current_user["sub"])
 
@@ -61,6 +62,6 @@ async def delete_ticket_type(
 async def create_booking(
     ticket_type_id: str,
     data: EventBookingCreate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_role(UserRole.PASSENGER)),
 ):
     return await booking_service.create_booking(ticket_type_id, data, current_user["sub"])
