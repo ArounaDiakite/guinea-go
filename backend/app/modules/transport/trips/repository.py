@@ -87,3 +87,15 @@ class TripRepository:
         )
 
         return result.modified_count > 0
+
+    async def increment_booked_seats(self, trip_id: str):
+        await self.collection.update_one(
+            {"_id": ObjectId(trip_id)},
+            {"$inc": {"booked_seats": 1, "available_seats": -1}},
+        )
+
+    async def decrement_booked_seats(self, trip_id: str):
+        await self.collection.update_one(
+            {"_id": ObjectId(trip_id)},
+            {"$inc": {"booked_seats": -1, "available_seats": 1}},
+        )

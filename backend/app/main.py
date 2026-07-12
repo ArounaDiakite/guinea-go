@@ -6,6 +6,7 @@ from app.modules.transport.stations.router import router as stations_router
 from app.modules.transport.routes.router import router as routes_router
 from app.modules.transport.schedules.router import router as schedules_router
 from app.modules.transport.trips.router import router as trips_router
+from app.modules.transport.bookings.router import router as bookings_router
 from app.identity.auth.router import router as auth_router
 from app.shared.cities.router import router as cities_router
 from app.modules.companies.router import router as companies_router
@@ -42,6 +43,7 @@ app.include_router(stations_router)
 app.include_router(routes_router)
 app.include_router(schedules_router)
 app.include_router(trips_router)
+app.include_router(bookings_router)
 @app.get("/", tags=["Root"])
 async def root():
     return {

@@ -2,6 +2,7 @@ from fastapi import HTTPException
 
 from app.common.base_model import BaseDocument
 from app.modules.companies.repository import CompanyRepository
+from app.modules.transport.bookings.repository import BookingRepository
 from app.modules.transport.buses.repository import BusRepository
 from app.modules.transport.seats.repository import SeatRepository
 from app.modules.transport.seats.schemas import SeatStatus, SeatType
@@ -14,6 +15,7 @@ class SeatService:
         self.bus_repository = BusRepository()
         self.company_repository = CompanyRepository()
         self.trip_repository = TripRepository()
+        self.booking_repository = BookingRepository()
 
     async def generate_seats(self, bus_id: str, user_id: str):
         bus = await self.bus_repository.get_by_id(bus_id)
@@ -73,24 +75,31 @@ class SeatService:
             raise HTTPException(status_code=404, detail="Trip not found.")
 
         seats = await self.repository.get_by_bus(trip["bus_id"])
+        reserved_seat_ids = await self.booking_repository.get_reserved_seat_ids(trip_id)
 
-        return [
-            {
-                "seat_id": str(seat["_id"]),
-                "seat_number": seat["seat_number"],
-                "seat_type": seat["seat_type"],
-                # Only the seat's own out-of-service state is reflected
-                # here for now. Once bookings exist, this must also check
-                # whether this seat is already booked for THIS trip_id
-                # and report RESERVED accordingly.
-                "status": (
-                    SeatStatus.MAINTENANCE.value
-                    if seat["status"] == SeatStatus.MAINTENANCE.value
-                    else SeatStatus.AVAILABLE.value
-                ),
-            }
-            for seat in seats
-        ]
+        result = []
+
+        for seat in seats:
+            seat_id = str(seat["_id"])
+
+            if seat["status"] == SeatStatus.MAINTENANCE.value:
+                # Out of service on every trip, regardless of bookings.
+                trip_status = SeatStatus.MAINTENANCE.value
+            elif seat_id in reserved_seat_ids:
+                trip_status = SeatStatus.RESERVED.value
+            else:
+                trip_status = SeatStatus.AVAILABLE.value
+
+            result.append(
+                {
+                    "seat_id": seat_id,
+                    "seat_number": seat["seat_number"],
+                    "seat_type": seat["seat_type"],
+                    "status": trip_status,
+                }
+            )
+
+        return result
 
     def _format(self, seat):
         return {
