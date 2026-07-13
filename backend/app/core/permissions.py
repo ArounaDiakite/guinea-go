@@ -51,6 +51,7 @@ ROLE_PERMISSIONS: dict[UserRole, set[str]] = {
     UserRole.STORE_MANAGER: {
         "inventory:manage",
         "products:manage",
+        "categories:manage",
         "suppliers:manage",
         "customers:manage",
         "invoices:manage",

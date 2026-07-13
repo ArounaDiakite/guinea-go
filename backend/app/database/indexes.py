@@ -74,3 +74,9 @@ async def create_indexes():
     await db.ticket_types.create_index("event_id")
     await db.event_bookings.create_index("passenger_id")
     await db.event_bookings.create_index([("ticket_type_id", 1), ("status", 1)])
+
+    # Categories / Products - fields filtered on in their respective
+    # get_all() queries.
+    await db.categories.create_index("category_parent_id")
+    await db.products.create_index("category_ids")
+    await db.products.create_index("owner_id")

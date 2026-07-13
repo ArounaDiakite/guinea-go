@@ -1,0 +1,70 @@
+from bson import ObjectId
+
+from app.database.mongodb import db
+
+
+class ProductRepository:
+    def __init__(self):
+        self.collection = db.products
+
+    async def create(self, data: dict):
+        result = await self.collection.insert_one(data)
+        return await self.get_by_id(str(result.inserted_id))
+
+    async def get_by_id(self, product_id: str):
+        if not ObjectId.is_valid(product_id):
+            return None
+
+        return await self.collection.find_one(
+            {"_id": ObjectId(product_id), "is_deleted": False}
+        )
+
+    async def get_all(
+        self,
+        page: int = 1,
+        limit: int = 20,
+        search: str | None = None,
+        category_id: str | None = None,
+        owner_id: str | None = None,
+    ):
+        query = {"is_deleted": False}
+
+        if search:
+            query["name"] = {"$regex": search, "$options": "i"}
+
+        if category_id:
+            query["category_ids"] = category_id
+
+        if owner_id:
+            query["owner_id"] = owner_id
+
+        cursor = (
+            self.collection.find(query)
+            .sort("created_at", -1)
+            .skip((page - 1) * limit)
+            .limit(limit)
+        )
+
+        return await cursor.to_list(length=limit)
+
+    async def update(self, product_id: str, data: dict):
+        if not ObjectId.is_valid(product_id):
+            return None
+
+        await self.collection.update_one(
+            {"_id": ObjectId(product_id)},
+            {"$set": data},
+        )
+
+        return await self.get_by_id(product_id)
+
+    async def soft_delete(self, product_id: str, data: dict):
+        if not ObjectId.is_valid(product_id):
+            return False
+
+        result = await self.collection.update_one(
+            {"_id": ObjectId(product_id)},
+            {"$set": data},
+        )
+
+        return result.modified_count > 0
