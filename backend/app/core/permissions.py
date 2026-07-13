@@ -43,6 +43,8 @@ ROLE_PERMISSIONS: dict[UserRole, set[str]] = {
     UserRole.SCHOOL_ADMINISTRATOR: {
         "institutions:manage",
         "academic_units:manage",
+        "subjects:manage",
+        "timeslots:manage",
         "students:manage",
         "teachers:manage",
         "classes:manage",

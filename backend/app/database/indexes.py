@@ -110,3 +110,12 @@ async def create_indexes():
     await db.teachers.create_index("academic_unit_ids")
     await db.students.create_index("institution_id")
     await db.students.create_index("academic_unit_id")
+
+    # Subjects / TimeSlots - fields filtered/queried on in get_by_
+    # institution()/get_by_academic_unit()/has_overlap(). The compound
+    # indexes match has_overlap()'s query shape exactly (field + day_of_
+    # week, then a range scan on start_time/end_time).
+    await db.subjects.create_index("institution_id")
+    await db.timeslots.create_index("academic_unit_id")
+    await db.timeslots.create_index([("teacher_id", 1), ("day_of_week", 1)])
+    await db.timeslots.create_index([("academic_unit_id", 1), ("day_of_week", 1)])

@@ -6,6 +6,8 @@ from app.modules.education.academic_units.schemas import (
     AcademicUnitResponse,
 )
 from app.modules.education.academic_units.service import AcademicUnitService
+from app.modules.education.timeslots.schemas import ScheduleItemResponse
+from app.modules.education.timeslots.service import TimeSlotService
 
 router = APIRouter(
     prefix="/academic-units",
@@ -13,6 +15,7 @@ router = APIRouter(
 )
 
 service = AcademicUnitService()
+timeslot_service = TimeSlotService()
 
 
 @router.post("/", response_model=AcademicUnitResponse)
@@ -39,6 +42,14 @@ async def get_academic_unit(
     current_user=Depends(get_current_user),
 ):
     return await service.get_academic_unit(academic_unit_id, current_user["sub"])
+
+
+@router.get("/{academic_unit_id}/schedule", response_model=list[ScheduleItemResponse])
+async def get_academic_unit_schedule(
+    academic_unit_id: str,
+    current_user=Depends(get_current_user),
+):
+    return await timeslot_service.get_schedule(academic_unit_id, current_user["sub"])
 
 
 @router.put("/{academic_unit_id}", response_model=AcademicUnitResponse)
