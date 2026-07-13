@@ -50,6 +50,7 @@ ROLE_PERMISSIONS: dict[UserRole, set[str]] = {
         "classes:manage",
         "exams:manage",
         "attendance:manage",
+        "grades:manage",
         "fees:manage",
     },
     UserRole.STORE_MANAGER: {

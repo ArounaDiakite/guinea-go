@@ -131,3 +131,8 @@ async def create_indexes():
         [("timeslot_id", 1), ("date", 1), ("student_id", 1)], unique=True
     )
     await db.attendance_records.create_index([("student_id", 1), ("date", -1)])
+
+    # Grades - matches get_by_student()'s query shape (student_id, with
+    # an optional period filter used by both the grades list and the
+    # report card calculation).
+    await db.grades.create_index([("student_id", 1), ("period", 1)])
