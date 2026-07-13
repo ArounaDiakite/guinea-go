@@ -5,6 +5,8 @@ from fastapi import APIRouter, Depends, Query
 from app.core.dependencies import get_current_user, require_permission
 from app.modules.education.attendance.schemas import AttendanceRecordResponse
 from app.modules.education.attendance.service import AttendanceService
+from app.modules.education.fees.schemas import StudentFeeCreate, StudentFeeResponse
+from app.modules.education.fees.service import StudentFeeService
 from app.modules.education.grades.schemas import GradeCreate, GradeResponse, Period, ReportCard
 from app.modules.education.grades.service import GradeService
 from app.modules.education.students.schemas import StudentCreate, StudentResponse
@@ -18,6 +20,7 @@ router = APIRouter(
 service = StudentService()
 attendance_service = AttendanceService()
 grade_service = GradeService()
+student_fee_service = StudentFeeService()
 
 
 @router.post("/", response_model=StudentResponse)
@@ -98,6 +101,23 @@ async def get_report_card(
     current_user=Depends(get_current_user),
 ):
     return await grade_service.get_report_card(student_id, current_user["sub"], period.value)
+
+
+@router.post("/{student_id}/fees", response_model=StudentFeeResponse)
+async def apply_fee_schedule(
+    student_id: str,
+    data: StudentFeeCreate,
+    current_user=Depends(require_permission("fees:manage")),
+):
+    return await student_fee_service.apply_fee_schedule(student_id, data, current_user["sub"])
+
+
+@router.get("/{student_id}/fees", response_model=list[StudentFeeResponse])
+async def get_student_fees(
+    student_id: str,
+    current_user=Depends(get_current_user),
+):
+    return await student_fee_service.get_student_fees(student_id, current_user["sub"])
 
 
 @router.put("/{student_id}", response_model=StudentResponse)

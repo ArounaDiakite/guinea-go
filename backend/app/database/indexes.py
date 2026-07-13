@@ -136,3 +136,18 @@ async def create_indexes():
     # an optional period filter used by both the grades list and the
     # report card calculation).
     await db.grades.create_index([("student_id", 1), ("period", 1)])
+
+    # Fee schedules / student fees - institution_id backs get_by_
+    # institution(); the unique (student_id, fee_schedule_id) pair backs
+    # apply_fee_schedule's pre-checked insert against a genuine
+    # double-submit race, same shape as attendance_records above, and
+    # doubles as get_by_student_and_schedule's lookup.
+    await db.fee_schedules.create_index("institution_id")
+    await db.student_fees.create_index(
+        [("student_id", 1), ("fee_schedule_id", 1)], unique=True
+    )
+
+    # Payments - booking_id is what every lookup in this collection
+    # filters on (get_by_booking/get_pending_by_booking/
+    # get_all_by_booking), across all five booking_type values.
+    await db.payments.create_index("booking_id")

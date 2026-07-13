@@ -4,12 +4,16 @@ import uuid
 from fastapi import HTTPException
 
 from app.common.base_model import BaseDocument
+from app.core.permissions import ensure_owner
 from app.modules.commerce.orders.repository import OrderRepository
+from app.modules.education.fees.repository import StudentFeeRepository
+from app.modules.education.institutions.repository import InstitutionRepository
+from app.modules.education.students.repository import StudentRepository
 from app.modules.events.bookings.repository import EventBookingRepository
 from app.modules.hotels.reservations.repository import HotelBookingRepository
 from app.modules.transport.bookings.repository import BookingRepository
 from app.payments.repository import PaymentRepository
-from app.payments.schemas import PaymentCreate
+from app.payments.schemas import PaymentCreate, SchoolFeePaymentCreate
 
 # Sandbox-only: simulates the delay of a real provider round-trip so the
 # pending -> completed transition is actually observable when testing the
@@ -54,6 +58,15 @@ class PaymentService:
             "event": EventBookingRepository(),
             "order": OrderRepository(),
         }
+        # School fees don't fit booking_repositories' shape (no
+        # PENDING_PAYMENT/CONFIRMED status transition, no exact-price
+        # match, several payments accumulate against one fee instead of
+        # a single one confirming it) - handled by the dedicated
+        # initiate_fee_payment/complete_sandbox_fee_payment pair below
+        # instead of being shoehorned into the generic path.
+        self.student_fee_repository = StudentFeeRepository()
+        self.student_repository = StudentRepository()
+        self.institution_repository = InstitutionRepository()
 
     def _booking_repository(self, booking_type: str):
         return self.booking_repositories[booking_type]
@@ -135,6 +148,98 @@ class PaymentService:
         )
 
         if booking_confirmed:
+            await self.repository.update_status(
+                payment_id, {"status": "completed", **BaseDocument.update()}
+            )
+        else:
+            await self.repository.update_status(
+                payment_id, {"status": "failed", **BaseDocument.update()}
+            )
+
+    async def _get_owned_student_fee(self, student_fee_id: str, student_id: str, user_id: str):
+        student_fee = await self.student_fee_repository.get_by_id(student_fee_id)
+
+        if not student_fee:
+            raise HTTPException(status_code=404, detail="Student fee not found.")
+
+        if student_fee["student_id"] != student_id:
+            raise HTTPException(
+                status_code=400,
+                detail="This fee does not belong to the given student.",
+            )
+
+        student = await self.student_repository.get_by_id(student_fee["student_id"])
+
+        if not student:
+            raise HTTPException(status_code=403, detail="Not allowed.")
+
+        institution = await self.institution_repository.get_by_id(student["institution_id"])
+
+        if not institution:
+            raise HTTPException(status_code=403, detail="Not allowed.")
+
+        ensure_owner(institution["administrator_id"], user_id)
+        return student_fee
+
+    async def initiate_fee_payment(self, student_id: str, data: SchoolFeePaymentCreate, user_id: str):
+        student_fee = await self._get_owned_student_fee(data.student_fee_id, student_id, user_id)
+
+        remaining = student_fee["amount_due"] - student_fee["amount_paid"]
+
+        if remaining <= 0.01:
+            raise HTTPException(status_code=400, detail="This fee has already been fully paid.")
+
+        if data.amount > remaining + 0.01:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Payment amount exceeds the remaining balance ({remaining:.2f}).",
+            )
+
+        existing_pending = await self.repository.get_pending_by_booking(data.student_fee_id)
+
+        if existing_pending:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "A payment is already in progress for this fee. Wait for it "
+                    "to complete before submitting another."
+                ),
+            )
+
+        payment_doc = {
+            "booking_id": data.student_fee_id,
+            "booking_type": "school_fee",
+            "amount": data.amount,
+            "currency": "GNF",
+            "provider": data.provider.value,
+            "status": "pending",
+            "external_reference": f"SANDBOX-{uuid.uuid4().hex[:12].upper()}",
+        }
+        payment_doc.update(BaseDocument.create())
+
+        payment = await self.repository.create(payment_doc)
+        return self._format(payment)
+
+    async def complete_sandbox_fee_payment(self, payment_id: str):
+        """Fee counterpart of complete_sandbox_payment: instead of a
+        conditional PENDING_PAYMENT -> CONFIRMED status transition, it
+        atomically accumulates this payment's amount onto the fee's
+        amount_paid (StudentFeeRepository.apply_payment) and reclassifies
+        unpaid/partial/paid from the result. Marks the payment failed if
+        that atomic update didn't match - i.e. another payment completed
+        in the meantime and this one would now overpay the fee."""
+        await asyncio.sleep(SANDBOX_COMPLETION_DELAY_SECONDS)
+
+        payment = await self.repository.get_by_id(payment_id)
+
+        if not payment or payment["status"] != "pending":
+            return
+
+        updated_fee = await self.student_fee_repository.apply_payment(
+            payment["booking_id"], payment["amount"]
+        )
+
+        if updated_fee:
             await self.repository.update_status(
                 payment_id, {"status": "completed", **BaseDocument.update()}
             )
