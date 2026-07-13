@@ -80,3 +80,8 @@ async def create_indexes():
     await db.categories.create_index("category_parent_id")
     await db.products.create_index("category_ids")
     await db.products.create_index("owner_id")
+
+    # One cart per user, enforced at the database level - backs
+    # CartRepository.get_or_create's upsert against a genuine race on a
+    # user's very first cart action.
+    await db.carts.create_index("customer_id", unique=True)
