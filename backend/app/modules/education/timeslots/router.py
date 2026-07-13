@@ -1,6 +1,11 @@
 from fastapi import APIRouter, Depends
 
 from app.core.dependencies import get_current_user, require_permission
+from app.modules.education.attendance.schemas import (
+    AttendanceRecordResponse,
+    AttendanceSubmit,
+)
+from app.modules.education.attendance.service import AttendanceService
 from app.modules.education.timeslots.schemas import TimeSlotCreate, TimeSlotResponse
 from app.modules.education.timeslots.service import TimeSlotService
 
@@ -10,6 +15,7 @@ router = APIRouter(
 )
 
 service = TimeSlotService()
+attendance_service = AttendanceService()
 
 
 @router.post("/", response_model=TimeSlotResponse)
@@ -43,3 +49,21 @@ async def delete_timeslot(
     current_user=Depends(require_permission("timeslots:manage")),
 ):
     return await service.delete_timeslot(timeslot_id, current_user["sub"])
+
+
+@router.post("/{timeslot_id}/attendance", response_model=list[AttendanceRecordResponse])
+async def submit_attendance(
+    timeslot_id: str,
+    data: AttendanceSubmit,
+    current_user=Depends(require_permission("attendance:manage")),
+):
+    return await attendance_service.submit_attendance(timeslot_id, data, current_user["sub"])
+
+
+@router.put("/{timeslot_id}/attendance", response_model=list[AttendanceRecordResponse])
+async def correct_attendance(
+    timeslot_id: str,
+    data: AttendanceSubmit,
+    current_user=Depends(require_permission("attendance:manage")),
+):
+    return await attendance_service.update_attendance(timeslot_id, data, current_user["sub"])

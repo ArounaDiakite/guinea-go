@@ -3,6 +3,8 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 
 from app.core.dependencies import get_current_user, require_permission
+from app.modules.education.attendance.schemas import AttendanceRecordResponse
+from app.modules.education.attendance.service import AttendanceService
 from app.modules.education.students.schemas import StudentCreate, StudentResponse
 from app.modules.education.students.service import StudentService
 
@@ -12,6 +14,7 @@ router = APIRouter(
 )
 
 service = StudentService()
+attendance_service = AttendanceService()
 
 
 @router.post("/", response_model=StudentResponse)
@@ -41,6 +44,18 @@ async def get_student(
     current_user=Depends(get_current_user),
 ):
     return await service.get_student(student_id, current_user["sub"])
+
+
+@router.get("/{student_id}/attendance", response_model=list[AttendanceRecordResponse])
+async def get_student_attendance(
+    student_id: str,
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=200),
+    current_user=Depends(get_current_user),
+):
+    return await attendance_service.get_student_attendance(
+        student_id, current_user["sub"], page, limit
+    )
 
 
 @router.put("/{student_id}", response_model=StudentResponse)

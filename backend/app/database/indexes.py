@@ -119,3 +119,15 @@ async def create_indexes():
     await db.timeslots.create_index("academic_unit_id")
     await db.timeslots.create_index([("teacher_id", 1), ("day_of_week", 1)])
     await db.timeslots.create_index([("academic_unit_id", 1), ("day_of_week", 1)])
+
+    # Attendance: one record per (timeslot, date, student), enforced at
+    # the database level - backs AttendanceRepository.create_many's
+    # pre-checked insert against a genuine double-submit race (same
+    # reasoning as institutions.administrator_id / carts.customer_id),
+    # and doubles as the query shape for get_by_timeslot_and_date/
+    # get_one. get_by_student needs its own index since student_id isn't
+    # a prefix of the compound key above.
+    await db.attendance_records.create_index(
+        [("timeslot_id", 1), ("date", 1), ("student_id", 1)], unique=True
+    )
+    await db.attendance_records.create_index([("student_id", 1), ("date", -1)])
