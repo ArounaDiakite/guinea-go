@@ -75,11 +75,13 @@ async def create_indexes():
     await db.event_bookings.create_index("passenger_id")
     await db.event_bookings.create_index([("ticket_type_id", 1), ("status", 1)])
 
-    # Categories / Products - fields filtered on in their respective
-    # get_all() queries.
+    # Categories / Stores / Products - fields filtered on in their
+    # respective get_all() queries.
     await db.categories.create_index("category_parent_id")
+    await db.stores.create_index("owner_id")
+    await db.stores.create_index("city")
     await db.products.create_index("category_ids")
-    await db.products.create_index("owner_id")
+    await db.products.create_index("store_id")
 
     # One cart per user, enforced at the database level - backs
     # CartRepository.get_or_create's upsert against a genuine race on a

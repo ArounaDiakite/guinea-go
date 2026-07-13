@@ -1,0 +1,64 @@
+from bson import ObjectId
+
+from app.database.mongodb import db
+
+
+class StoreRepository:
+    def __init__(self):
+        self.collection = db.stores
+
+    async def create(self, store: dict):
+        result = await self.collection.insert_one(store)
+        store["_id"] = result.inserted_id
+        return store
+
+    async def get_all(
+        self,
+        page: int = 1,
+        limit: int = 20,
+        search: str | None = None,
+        city: str | None = None,
+        owner_id: str | None = None,
+    ):
+        query = {"is_deleted": False}
+
+        if search:
+            query["name"] = {"$regex": search, "$options": "i"}
+
+        if city:
+            query["city"] = {"$regex": city, "$options": "i"}
+
+        if owner_id:
+            query["owner_id"] = owner_id
+
+        cursor = (
+            self.collection.find(query)
+            .sort("created_at", -1)
+            .skip((page - 1) * limit)
+            .limit(limit)
+        )
+
+        return await cursor.to_list(length=limit)
+
+    async def get_by_id(self, store_id: str):
+        if not ObjectId.is_valid(store_id):
+            return None
+
+        return await self.collection.find_one({
+            "_id": ObjectId(store_id),
+            "is_deleted": False,
+        })
+
+    async def update(self, store_id: str, data: dict):
+        await self.collection.update_one(
+            {"_id": ObjectId(store_id), "is_deleted": False},
+            {"$set": data},
+        )
+        return await self.get_by_id(store_id)
+
+    async def soft_delete(self, store_id: str, data: dict):
+        result = await self.collection.update_one(
+            {"_id": ObjectId(store_id), "is_deleted": False},
+            {"$set": data},
+        )
+        return result.modified_count > 0

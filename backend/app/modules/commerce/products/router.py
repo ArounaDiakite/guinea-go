@@ -28,9 +28,9 @@ async def get_products(
     limit: int = Query(20, ge=1, le=100),
     search: Optional[str] = None,
     category_id: Optional[str] = None,
-    owner_id: Optional[str] = None,
+    store_id: Optional[str] = None,
 ):
-    return await service.get_products(page, limit, search, category_id, owner_id)
+    return await service.get_products(page, limit, search, category_id, store_id)
 
 
 @router.get("/{product_id}", response_model=ProductResponse)

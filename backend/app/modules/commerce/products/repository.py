@@ -25,7 +25,7 @@ class ProductRepository:
         limit: int = 20,
         search: str | None = None,
         category_id: str | None = None,
-        owner_id: str | None = None,
+        store_id: str | None = None,
     ):
         query = {"is_deleted": False}
 
@@ -35,8 +35,8 @@ class ProductRepository:
         if category_id:
             query["category_ids"] = category_id
 
-        if owner_id:
-            query["owner_id"] = owner_id
+        if store_id:
+            query["store_id"] = store_id
 
         cursor = (
             self.collection.find(query)

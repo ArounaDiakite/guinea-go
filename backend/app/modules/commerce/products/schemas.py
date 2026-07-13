@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 
 class ProductCreate(BaseModel):
+    store_id: str
     name: str = Field(..., min_length=2, max_length=150)
     description: Optional[str] = None
     price: float = Field(..., gt=0)
@@ -16,13 +17,13 @@ class ProductCreate(BaseModel):
 
 class ProductResponse(BaseModel):
     id: str
+    store_id: str
     name: str
     description: Optional[str] = None
     price: float
     category_ids: list[str] = []
     images: list[str] = []
     stock: int
-    owner_id: str
     is_active: bool
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
