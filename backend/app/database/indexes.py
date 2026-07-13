@@ -87,3 +87,10 @@ async def create_indexes():
     # CartRepository.get_or_create's upsert against a genuine race on a
     # user's very first cart action.
     await db.carts.create_index("customer_id", unique=True)
+
+    # Orders - fields filtered on in get_by_customer()/get_stale_pending_
+    # orders(). No per-unit concurrency-control collection here either,
+    # same reasoning as ticket_types: the atomic claim is a single
+    # find_one_and_update on products.stock itself.
+    await db.orders.create_index("customer_id")
+    await db.orders.create_index([("store_id", 1), ("status", 1)])

@@ -4,6 +4,7 @@ import uuid
 from fastapi import HTTPException
 
 from app.common.base_model import BaseDocument
+from app.modules.commerce.orders.repository import OrderRepository
 from app.modules.events.bookings.repository import EventBookingRepository
 from app.modules.hotels.reservations.repository import HotelBookingRepository
 from app.modules.transport.bookings.repository import BookingRepository
@@ -18,18 +19,40 @@ SANDBOX_COMPLETION_DELAY_SECONDS = 2
 
 _ACTIVE_PAYMENT_STATUSES = ("pending", "completed")
 
+# The field each booking type's document uses to record who it belongs
+# to. Every other domain calls it passenger_id; commerce Orders use
+# customer_id (the right word for that domain) - mapped here instead of
+# forcing an odd field name onto Order just to keep this generic.
+_OWNER_FIELD_BY_TYPE = {
+    "transport": "passenger_id",
+    "hotel": "passenger_id",
+    "event": "passenger_id",
+    "order": "customer_id",
+}
+
+# Same idea for the field holding the amount owed: every booking type
+# calls it price_paid except commerce Orders, which total several line
+# items under "total".
+_PRICE_FIELD_BY_TYPE = {
+    "transport": "price_paid",
+    "hotel": "price_paid",
+    "event": "price_paid",
+    "order": "total",
+}
+
 
 class PaymentService:
     def __init__(self):
         self.repository = PaymentRepository()
-        # Both booking repositories expose the same get_by_id/
+        # All booking repositories expose the same get_by_id/
         # transition_status_if shape, so this service stays agnostic to
         # which domain a booking_id belongs to beyond picking the right
-        # repository for it.
+        # repository (and owner field) for it.
         self.booking_repositories = {
             "transport": BookingRepository(),
             "hotel": HotelBookingRepository(),
             "event": EventBookingRepository(),
+            "order": OrderRepository(),
         }
 
     def _booking_repository(self, booking_type: str):
@@ -48,7 +71,9 @@ class PaymentService:
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found.")
 
-        if booking["passenger_id"] != passenger_id:
+        owner_field = _OWNER_FIELD_BY_TYPE.get(booking_type, "passenger_id")
+
+        if booking[owner_field] != passenger_id:
             raise HTTPException(status_code=403, detail="Not allowed.")
 
         if booking["status"] != "PENDING_PAYMENT":
@@ -57,7 +82,9 @@ class PaymentService:
                 detail=f"This booking is not awaiting payment (status: {booking['status']}).",
             )
 
-        if abs(data.amount - booking["price_paid"]) > 0.01:
+        price_field = _PRICE_FIELD_BY_TYPE.get(booking_type, "price_paid")
+
+        if abs(data.amount - booking[price_field]) > 0.01:
             raise HTTPException(
                 status_code=400,
                 detail="Payment amount does not match the booking's price.",

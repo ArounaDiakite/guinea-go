@@ -19,6 +19,11 @@ event_router = APIRouter(
     tags=["Payments"],
 )
 
+order_router = APIRouter(
+    prefix="/orders",
+    tags=["Payments"],
+)
+
 service = PaymentService()
 
 
@@ -57,6 +62,20 @@ async def initiate_event_payment(
 ):
     payment = await service.initiate_payment(
         booking_id, data, current_user["sub"], booking_type="event"
+    )
+    background_tasks.add_task(service.complete_sandbox_payment, payment["id"])
+    return payment
+
+
+@order_router.post("/{booking_id}/payments", response_model=PaymentResponse)
+async def initiate_order_payment(
+    booking_id: str,
+    data: PaymentCreate,
+    background_tasks: BackgroundTasks,
+    current_user=Depends(get_current_user),
+):
+    payment = await service.initiate_payment(
+        booking_id, data, current_user["sub"], booking_type="order"
     )
     background_tasks.add_task(service.complete_sandbox_payment, payment["id"])
     return payment

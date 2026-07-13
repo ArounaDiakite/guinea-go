@@ -10,6 +10,7 @@ from app.modules.transport.bookings.router import router as bookings_router
 from app.payments.router import router as payments_router
 from app.payments.router import hotel_router as hotel_payments_router
 from app.payments.router import event_router as event_payments_router
+from app.payments.router import order_router as order_payments_router
 from app.modules.hotels.hotels.router import router as hotels_router
 from app.modules.hotels.rooms.router import router as rooms_router
 from app.modules.hotels.reservations.router import router as hotel_bookings_router
@@ -20,6 +21,7 @@ from app.modules.commerce.categories.router import router as categories_router
 from app.modules.commerce.stores.router import router as stores_router
 from app.modules.commerce.products.router import router as products_router
 from app.modules.commerce.cart.router import router as cart_router
+from app.modules.commerce.orders.router import router as orders_router
 from app.identity.auth.router import router as auth_router
 from app.shared.cities.router import router as cities_router
 from app.modules.companies.router import router as companies_router
@@ -70,6 +72,8 @@ app.include_router(categories_router)
 app.include_router(stores_router)
 app.include_router(products_router)
 app.include_router(cart_router)
+app.include_router(orders_router)
+app.include_router(order_payments_router)
 @app.get("/", tags=["Root"])
 async def root():
     return {

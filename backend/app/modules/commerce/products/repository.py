@@ -68,3 +68,31 @@ class ProductRepository:
         )
 
         return result.modified_count > 0
+
+    async def claim_stock(self, product_id: str, quantity: int) -> bool:
+        """Atomic compare-and-decrement, same shape as TicketTypeRepository.
+        claim_tickets: a single document operation, no separate per-unit
+        collection needed since stock (like ticket quantity_available) is
+        just an integer counter, not something with individual identity."""
+        if not ObjectId.is_valid(product_id):
+            return False
+
+        result = await self.collection.find_one_and_update(
+            {
+                "_id": ObjectId(product_id),
+                "is_deleted": False,
+                "stock": {"$gte": quantity},
+            },
+            {"$inc": {"stock": -quantity}},
+        )
+
+        return result is not None
+
+    async def release_stock(self, product_id: str, quantity: int):
+        if not ObjectId.is_valid(product_id):
+            return
+
+        await self.collection.update_one(
+            {"_id": ObjectId(product_id)},
+            {"$inc": {"stock": quantity}},
+        )
