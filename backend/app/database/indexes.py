@@ -94,3 +94,19 @@ async def create_indexes():
     # find_one_and_update on products.stock itself.
     await db.orders.create_index("customer_id")
     await db.orders.create_index([("store_id", 1), ("status", 1)])
+
+    # Institutions: one per school_administrator, enforced at the database
+    # level - backs InstitutionService.create_institution's advisory check
+    # against a genuine double-submit race on a user's very first
+    # institution creation (same reasoning as carts.customer_id).
+    await db.institutions.create_index("administrator_id", unique=True)
+
+    # AcademicUnits / Teachers / Students - fields filtered on in their
+    # respective get_by_institution() queries. No cross-institution
+    # queries exist anywhere in this module by design, so institution_id
+    # is the only index that matters for isolation/performance here.
+    await db.academic_units.create_index("institution_id")
+    await db.teachers.create_index("institution_id")
+    await db.teachers.create_index("academic_unit_ids")
+    await db.students.create_index("institution_id")
+    await db.students.create_index("academic_unit_id")

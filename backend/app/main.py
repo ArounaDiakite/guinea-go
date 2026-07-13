@@ -22,6 +22,10 @@ from app.modules.commerce.stores.router import router as stores_router
 from app.modules.commerce.products.router import router as products_router
 from app.modules.commerce.cart.router import router as cart_router
 from app.modules.commerce.orders.router import router as orders_router
+from app.modules.education.institutions.router import router as institutions_router
+from app.modules.education.academic_units.router import router as academic_units_router
+from app.modules.education.teachers.router import router as edu_teachers_router
+from app.modules.education.students.router import router as edu_students_router
 from app.identity.auth.router import router as auth_router
 from app.shared.cities.router import router as cities_router
 from app.modules.companies.router import router as companies_router
@@ -74,6 +78,10 @@ app.include_router(products_router)
 app.include_router(cart_router)
 app.include_router(orders_router)
 app.include_router(order_payments_router)
+app.include_router(institutions_router)
+app.include_router(academic_units_router)
+app.include_router(edu_teachers_router)
+app.include_router(edu_students_router)
 @app.get("/", tags=["Root"])
 async def root():
     return {

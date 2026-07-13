@@ -41,6 +41,8 @@ ROLE_PERMISSIONS: dict[UserRole, set[str]] = {
         "attendance:monitor",
     },
     UserRole.SCHOOL_ADMINISTRATOR: {
+        "institutions:manage",
+        "academic_units:manage",
         "students:manage",
         "teachers:manage",
         "classes:manage",
