@@ -3,11 +3,19 @@ from fastapi import HTTPException
 from app.common.base_model import BaseDocument
 from app.modules.transport.stations.repository import StationRepository
 from app.modules.transport.stations.schemas import StationCreate
+from app.shared.cities.repository import CityRepository
 
 
 class StationService:
     def __init__(self):
         self.repository = StationRepository()
+        self.city_repository = CityRepository()
+
+    async def _validate_city(self, city_id: str):
+        city = await self.city_repository.get_by_id(city_id)
+
+        if not city:
+            raise HTTPException(status_code=400, detail="City not found.")
 
     async def create_station(self, data: StationCreate):
         existing = await self.repository.get_by_code(data.station_code)
@@ -18,10 +26,11 @@ class StationService:
                 detail="Station code already exists.",
             )
 
+        await self._validate_city(data.city_id)
+
         station = data.model_dump()
         station["station_type"] = station["station_type"].value
         station["station_code"] = station["station_code"].upper()
-        station["country_code"] = station["country_code"].upper()
 
         station.update(BaseDocument.create())
 
@@ -33,14 +42,14 @@ class StationService:
         page: int,
         limit: int,
         search: str | None,
-        city: str | None,
+        city_id: str | None,
         station_type: str | None,
     ):
         stations = await self.repository.get_all(
             page=page,
             limit=limit,
             search=search,
-            city=city,
+            city_id=city_id,
             station_type=station_type,
         )
 
@@ -60,10 +69,11 @@ class StationService:
         if not station:
             raise HTTPException(status_code=404, detail="Station not found.")
 
+        await self._validate_city(data.city_id)
+
         update_data = data.model_dump()
         update_data["station_type"] = update_data["station_type"].value
         update_data["station_code"] = update_data["station_code"].upper()
-        update_data["country_code"] = update_data["country_code"].upper()
         update_data.update(BaseDocument.update())
 
         station = await self.repository.update(station_id, update_data)
@@ -95,8 +105,7 @@ class StationService:
             "name": station["name"],
             "station_code": station["station_code"],
             "station_type": station["station_type"],
-            "country_code": station["country_code"],
-            "city": station["city"],
+            "city_id": station["city_id"],
             "address": station["address"],
             "latitude": station.get("latitude"),
             "longitude": station.get("longitude"),

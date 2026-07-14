@@ -1,3 +1,5 @@
+from bson import ObjectId
+
 from app.database.mongodb import db
 
 
@@ -8,6 +10,12 @@ class CityRepository:
     async def create_city(self, city_data: dict):
         result = await self.collection.insert_one(city_data)
         return await self.collection.find_one({"_id": result.inserted_id})
+
+    async def get_by_id(self, city_id: str):
+        if not ObjectId.is_valid(city_id):
+            return None
+
+        return await self.collection.find_one({"_id": ObjectId(city_id)})
 
     async def get_city(self, country_code: str, name: str):
         return await self.collection.find_one({

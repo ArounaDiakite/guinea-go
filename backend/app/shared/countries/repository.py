@@ -1,3 +1,5 @@
+from bson import ObjectId
+
 from app.database.mongodb import db
 
 
@@ -15,3 +17,9 @@ class CountryRepository:
 
     async def get_country_by_code(self, code: str):
         return await self.collection.find_one({"code": code.upper()})
+
+    async def get_by_id(self, country_id: str):
+        if not ObjectId.is_valid(country_id):
+            return None
+
+        return await self.collection.find_one({"_id": ObjectId(country_id)})

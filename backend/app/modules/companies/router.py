@@ -36,9 +36,9 @@ async def get_companies(
     limit: int = Query(20, ge=1, le=100),
     search: Optional[str] = None,
     company_type: Optional[str] = None,
-    city: Optional[str] = None,
+    city_id: Optional[str] = None,
 ):
-    return await service.get_companies(page, limit, search, company_type, city)
+    return await service.get_companies(page, limit, search, company_type, city_id)
 
 
 @router.get("/{company_id}", response_model=CompanyResponse)

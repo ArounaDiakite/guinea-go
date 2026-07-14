@@ -28,10 +28,10 @@ async def get_stations(
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
     search: Optional[str] = None,
-    city: Optional[str] = None,
+    city_id: Optional[str] = None,
     station_type: Optional[str] = None,
 ):
-    return await service.get_stations(page, limit, search, city, station_type)
+    return await service.get_stations(page, limit, search, city_id, station_type)
 
 
 @router.get("/{station_id}", response_model=StationResponse)

@@ -17,7 +17,8 @@ async def create_indexes():
 
     # Companies - fields filtered on in CompanyRepository.get_all.
     await db.companies.create_index("company_type")
-    await db.companies.create_index("city")
+    await db.companies.create_index("city_id")
+    await db.companies.create_index("country_id")
 
     # Buses - fields filtered on in BusRepository.get_all.
     await db.buses.create_index("company_id")
@@ -25,7 +26,7 @@ async def create_indexes():
 
     # Stations - fields filtered on in StationRepository.get_all, plus
     # station_code which get_by_code looks up on every route creation.
-    await db.stations.create_index("city")
+    await db.stations.create_index("city_id")
     await db.stations.create_index("station_type")
     await db.stations.create_index("station_code")
 

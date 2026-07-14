@@ -18,7 +18,7 @@ class CompanyRepository:
         limit: int = 20,
         search: str | None = None,
         company_type: str | None = None,
-        city: str | None = None,
+        city_id: str | None = None,
     ):
         query = {"is_deleted": False}
 
@@ -28,8 +28,8 @@ class CompanyRepository:
         if company_type:
             query["company_type"] = company_type.upper()
 
-        if city:
-            query["city"] = {"$regex": city, "$options": "i"}
+        if city_id:
+            query["city_id"] = city_id
 
         skip = (page - 1) * limit
 

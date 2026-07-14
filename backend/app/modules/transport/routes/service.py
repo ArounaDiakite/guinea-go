@@ -6,6 +6,7 @@ from app.modules.companies.repository import CompanyRepository
 from app.modules.transport.routes.repository import RouteRepository
 from app.modules.transport.routes.schemas import RouteCreate
 from app.modules.transport.stations.repository import StationRepository
+from app.shared.resolver import LocationResolver
 
 
 class RouteService:
@@ -13,6 +14,11 @@ class RouteService:
         self.repository = RouteRepository()
         self.company_repository = CompanyRepository()
         self.station_repository = StationRepository()
+        self.location_resolver = LocationResolver()
+
+    async def _resolve_currency(self, company: dict, currency_id: str | None) -> str:
+        country = await self.location_resolver.resolve_country(company["country_id"])
+        return await self.location_resolver.resolve_currency(currency_id, country)
 
     async def create_route(self, data: RouteCreate, user_id: str):
         existing = await self.repository.get_by_code(data.route_code)
@@ -59,9 +65,12 @@ class RouteService:
                 detail="Origin and destination stations must be different.",
             )
 
+        currency_id = await self._resolve_currency(company, data.currency_id)
+
         route = data.model_dump()
 
         route["route_code"] = route["route_code"].upper()
+        route["currency_id"] = currency_id
 
         route.update(BaseDocument.create())
 
@@ -146,9 +155,12 @@ class RouteService:
                 detail="Origin and destination stations must be different.",
             )
 
+        currency_id = await self._resolve_currency(company, data.currency_id)
+
         update_data = data.model_dump()
 
         update_data["route_code"] = update_data["route_code"].upper()
+        update_data["currency_id"] = currency_id
 
         update_data.update(BaseDocument.update())
 
@@ -212,6 +224,7 @@ class RouteService:
             "distance_km": route["distance_km"],
             "estimated_duration_minutes": route["estimated_duration_minutes"],
             "base_price": route["base_price"],
+            "currency_id": route["currency_id"],
             "description": route.get("description"),
             "is_active": route["is_active"],
             "created_at": route.get("created_at"),

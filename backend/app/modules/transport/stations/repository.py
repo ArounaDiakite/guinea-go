@@ -35,15 +35,15 @@ class StationRepository:
         page: int = 1,
         limit: int = 10,
         search: str | None = None,
-        city: str | None = None,
+        city_id: str | None = None,
         station_type: str | None = None,
     ):
         query = {
             "is_deleted": False,
         }
 
-        if city:
-            query["city"] = city
+        if city_id:
+            query["city_id"] = city_id
 
         if station_type:
             query["station_type"] = station_type

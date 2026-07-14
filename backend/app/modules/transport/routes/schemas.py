@@ -16,6 +16,9 @@ class RouteCreate(BaseModel):
     estimated_duration_minutes: int = Field(..., gt=0)
 
     base_price: float = Field(..., gt=0)
+    # Defaults to the company's own country's currency when omitted -
+    # no need to specify it if it's derivable from the parent resource.
+    currency_id: Optional[str] = None
 
     description: Optional[str] = None
 
@@ -33,6 +36,7 @@ class RouteResponse(BaseModel):
     estimated_duration_minutes: int
 
     base_price: float
+    currency_id: str
 
     description: Optional[str] = None
 

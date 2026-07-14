@@ -7,13 +7,21 @@ from fastapi import HTTPException, UploadFile
 from app.common.base_model import BaseDocument
 from app.modules.companies.repository import CompanyRepository
 from app.modules.companies.schemas import CompanyCreate
+from app.shared.resolver import LocationResolver
 
 
 class CompanyService:
     def __init__(self):
         self.repository = CompanyRepository()
+        self.location_resolver = LocationResolver()
+
+    async def _validate_location(self, data: CompanyCreate):
+        country = await self.location_resolver.resolve_country(data.country_id)
+        await self.location_resolver.resolve_city(data.city_id, country)
 
     async def create_company(self, data: CompanyCreate, owner_id: str):
+        await self._validate_location(data)
+
         company = data.model_dump()
 
         company["company_type"] = company["company_type"].value
@@ -33,14 +41,14 @@ class CompanyService:
         limit: int,
         search: str | None,
         company_type: str | None,
-        city: str | None,
+        city_id: str | None,
     ):
         companies = await self.repository.get_all(
             page,
             limit,
             search,
             company_type,
-            city,
+            city_id,
         )
 
         return [self._format(company) for company in companies]
@@ -75,6 +83,8 @@ class CompanyService:
                 status_code=403,
                 detail="Not allowed.",
             )
+
+        await self._validate_location(data)
 
         data_to_update = data.model_dump()
 
@@ -217,8 +227,8 @@ class CompanyService:
             "email": company["email"],
             "website": company.get("website"),
             "logo_url": company.get("logo_url"),
-            "country_code": company["country_code"],
-            "city": company["city"],
+            "country_id": company["country_id"],
+            "city_id": company["city_id"],
             "address": company["address"],
             "owner_id": company["owner_id"],
             "is_verified": company["is_verified"],

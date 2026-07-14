@@ -20,8 +20,8 @@ class CompanyCreate(BaseModel):
     phone: str
     email: EmailStr
     website: Optional[str] = None
-    country_code: str
-    city: str
+    country_id: str
+    city_id: str
     address: str
 
 
@@ -33,8 +33,8 @@ class CompanyResponse(BaseModel):
     phone: str
     email: EmailStr
     website: Optional[str] = None
-    country_code: str
-    city: str
+    country_id: str
+    city_id: str
     address: str
     owner_id: str
     is_verified: bool

@@ -17,8 +17,9 @@ class StationCreate(BaseModel):
     station_code: str = Field(..., min_length=2, max_length=50)
     station_type: StationType
 
-    country_code: str = Field(..., min_length=2, max_length=3)
-    city: str = Field(..., min_length=2, max_length=100)
+    # No country_id here - a station's country is always derivable
+    # from city_id (shared/cities.country_code), not worth duplicating.
+    city_id: str
     address: str = Field(..., min_length=2, max_length=255)
 
     latitude: Optional[float] = Field(None, ge=-90, le=90)
@@ -37,8 +38,7 @@ class StationResponse(BaseModel):
     station_code: str
     station_type: StationType
 
-    country_code: str
-    city: str
+    city_id: str
     address: str
 
     latitude: Optional[float] = None
