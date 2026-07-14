@@ -7,8 +7,8 @@ class InstitutionRepository:
     def __init__(self):
         self.collection = db.institutions
 
-    async def create(self, institution: dict):
-        result = await self.collection.insert_one(institution)
+    async def create(self, institution: dict, session=None):
+        result = await self.collection.insert_one(institution, session=session)
         institution["_id"] = result.inserted_id
         return institution
 

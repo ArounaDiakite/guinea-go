@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from pymongo.errors import OperationFailure
 
 from app.common.base_model import BaseDocument
+from app.common.utils import is_transactions_unsupported
 from app.database.mongodb import client as mongo_client
 from app.identity.auth.schemas import RegisterRequest
 from app.identity.auth.service import AuthService
@@ -14,17 +15,6 @@ from app.modules.transport.drivers.schemas import (
     DriverCreate,
     DriverProfileCreate,
 )
-
-# pymongo OperationFailure code 20 (IllegalOperation) covers several cases;
-# only treat it as "transactions unsupported" when the message confirms it -
-# i.e. a standalone mongod instead of a replica set / mongos.
-_TRANSACTIONS_UNSUPPORTED_CODE = 20
-
-
-def _is_transactions_unsupported(error: OperationFailure) -> bool:
-    return error.code == _TRANSACTIONS_UNSUPPORTED_CODE and (
-        "replica set" in str(error).lower()
-    )
 
 
 class DriverService:
@@ -75,7 +65,7 @@ class DriverService:
         try:
             return await self._create_with_transaction(company_id, data)
         except OperationFailure as error:
-            if not _is_transactions_unsupported(error):
+            if not is_transactions_unsupported(error):
                 raise
             return await self._create_with_manual_rollback(company_id, data)
 

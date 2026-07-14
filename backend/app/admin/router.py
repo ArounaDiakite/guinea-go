@@ -4,6 +4,11 @@ from app.admin.schemas import AdminUserResponse
 from app.admin.service import AdminService
 from app.core.constants import UserRole
 from app.core.dependencies import require_role
+from app.modules.education.institutions.schemas import (
+    InstitutionAccountCreate,
+    InstitutionWithAccountResponse,
+)
+from app.modules.education.institutions.service import InstitutionService
 
 router = APIRouter(
     prefix="/admin",
@@ -11,6 +16,7 @@ router = APIRouter(
 )
 
 service = AdminService()
+institution_service = InstitutionService()
 
 
 @router.get("/users/pending", response_model=list[AdminUserResponse])
@@ -26,3 +32,11 @@ async def activate_user(
     current_user=Depends(require_role(UserRole.SYSTEM_ADMINISTRATOR)),
 ):
     return await service.activate_user(user_id)
+
+
+@router.post("/institutions", response_model=InstitutionWithAccountResponse)
+async def create_institution(
+    data: InstitutionAccountCreate,
+    current_user=Depends(require_role(UserRole.SYSTEM_ADMINISTRATOR)),
+):
+    return await institution_service.create_public_institution(data)

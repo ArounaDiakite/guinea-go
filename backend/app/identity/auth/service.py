@@ -122,6 +122,41 @@ class AuthService:
 
         return self._format_user(user)
 
+    async def register_institution_administrator(
+        self, data: RegisterRequest, is_active: bool, session=None
+    ):
+        """Shared by both institution registration paths (education/
+        institutions/service.py orchestrates the atomic account +
+        Institution creation for each): is_active=True when a
+        system_administrator creates a public institution directly,
+        False when a school_administrator self-registers a private one
+        pending admin validation - same account shape either way, only
+        the activation state differs."""
+        existing_user = await self.repository.get_user_by_email(data.email, session=session)
+
+        if existing_user:
+            raise EmailAlreadyExistsException()
+
+        user_data = data.model_dump()
+
+        user_data["password"] = hash_password(data.password)
+
+        user_data["role"] = UserRole.SCHOOL_ADMINISTRATOR
+        user_data["is_active"] = is_active
+        user_data["is_verified"] = False
+        user_data["profile_picture"] = None
+
+        user_data["country_code"] = data.country_code.upper()
+        user_data["preferred_language"] = data.preferred_language.lower()
+
+        user_data["created_at"] = utc_now()
+        user_data["updated_at"] = utc_now()
+        user_data["last_login"] = None
+
+        user = await self.repository.create_user(user_data, session=session)
+
+        return self._format_user(user)
+
     async def delete_account(self, user_id: str, session=None):
         """Rollback helper for orchestrated, cross-module account creation
         (e.g. companies/router.py creating a driver's auth account + business
