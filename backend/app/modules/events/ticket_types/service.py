@@ -5,12 +5,18 @@ from app.core.permissions import ensure_owner
 from app.modules.events.events.repository import EventRepository
 from app.modules.events.ticket_types.repository import TicketTypeRepository
 from app.modules.events.ticket_types.schemas import TicketTypeCreate
+from app.shared.resolver import LocationResolver
 
 
 class TicketTypeService:
     def __init__(self):
         self.repository = TicketTypeRepository()
         self.event_repository = EventRepository()
+        self.location_resolver = LocationResolver()
+
+    async def _resolve_currency(self, event: dict, currency_id: str | None) -> str:
+        country = await self.location_resolver.resolve_country(event["country_id"])
+        return await self.location_resolver.resolve_currency(currency_id, country)
 
     async def create_ticket_type(self, data: TicketTypeCreate, user_id: str):
         event = await self.event_repository.get_by_id(data.event_id)
@@ -20,9 +26,12 @@ class TicketTypeService:
 
         ensure_owner(event["organizer_id"], user_id)
 
+        currency_id = await self._resolve_currency(event, data.currency_id)
+
         ticket_type = data.model_dump()
         ticket_type["category"] = ticket_type["category"].value
         ticket_type["quantity_available"] = ticket_type["quantity_total"]
+        ticket_type["currency_id"] = currency_id
         ticket_type.update(BaseDocument.create())
 
         ticket_type = await self.repository.create(ticket_type)
@@ -59,6 +68,8 @@ class TicketTypeService:
 
         ensure_owner(event["organizer_id"], user_id)
 
+        currency_id = await self._resolve_currency(event, data.currency_id)
+
         # quantity_available isn't part of TicketTypeCreate, so this
         # $set never touches it - it's a live counter claimed/released
         # atomically by bookings (claim_tickets/release_tickets), and
@@ -68,6 +79,7 @@ class TicketTypeService:
         # mutated by anything else, so it's safe to update directly.
         update_data = data.model_dump()
         update_data["category"] = update_data["category"].value
+        update_data["currency_id"] = currency_id
         update_data.update(BaseDocument.update())
 
         updated = await self.repository.update(ticket_type_id, update_data)
@@ -106,6 +118,7 @@ class TicketTypeService:
             "event_id": ticket_type["event_id"],
             "category": ticket_type["category"],
             "base_price": ticket_type["base_price"],
+            "currency_id": ticket_type["currency_id"],
             "quantity_total": ticket_type["quantity_total"],
             "quantity_available": ticket_type["quantity_available"],
             "description": ticket_type.get("description"),

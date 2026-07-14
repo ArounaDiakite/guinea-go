@@ -71,7 +71,8 @@ async def create_indexes():
     # find_one_and_update on ticket_types.quantity_available itself -
     # nothing to index beyond the implicit _id lookup that's already
     # covered by the default _id index.
-    await db.events.create_index("city")
+    await db.events.create_index("city_id")
+    await db.events.create_index("country_id")
     await db.events.create_index("category")
     await db.ticket_types.create_index("event_id")
     await db.event_bookings.create_index("passenger_id")

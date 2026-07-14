@@ -16,6 +16,10 @@ class TicketTypeCreate(BaseModel):
     event_id: str
     category: TicketCategory
     base_price: float = Field(..., gt=0)
+    # Defaults to the owning event's own country's currency when
+    # omitted - no need to specify it if it's derivable from the
+    # parent resource.
+    currency_id: Optional[str] = None
     quantity_total: int = Field(..., ge=1)
     description: Optional[str] = None
 
@@ -25,6 +29,7 @@ class TicketTypeResponse(BaseModel):
     event_id: str
     category: TicketCategory
     base_price: float
+    currency_id: str
     quantity_total: int
     quantity_available: int
     description: Optional[str] = None

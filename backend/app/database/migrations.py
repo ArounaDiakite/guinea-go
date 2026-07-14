@@ -150,9 +150,20 @@ async def migrate_rooms_currency():
     await _migrate_currency_via_parent(db.rooms, db.hotels, "hotel_id")
 
 
+async def migrate_events_location():
+    await _migrate_location_collection(db.events)
+
+
+async def migrate_ticket_types_currency():
+    # Must run after migrate_events_location().
+    await _migrate_currency_via_parent(db.ticket_types, db.events, "event_id")
+
+
 async def run_migrations():
     await migrate_companies_location()
     await migrate_stations_location()
     await migrate_routes_currency()
     await migrate_hotels_location()
     await migrate_rooms_currency()
+    await migrate_events_location()
+    await migrate_ticket_types_currency()

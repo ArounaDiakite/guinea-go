@@ -18,8 +18,8 @@ class EventCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=150)
     description: Optional[str] = None
     venue: str = Field(..., min_length=2, max_length=255)
-    city: str = Field(..., min_length=2, max_length=100)
-    country_code: str = Field(..., min_length=2, max_length=3)
+    country_id: str
+    city_id: str
     start_datetime: datetime
     end_datetime: datetime
     category: EventCategory
@@ -36,8 +36,8 @@ class EventResponse(BaseModel):
     name: str
     description: Optional[str] = None
     venue: str
-    city: str
-    country_code: str
+    country_id: str
+    city_id: str
     start_datetime: datetime
     end_datetime: datetime
     category: EventCategory

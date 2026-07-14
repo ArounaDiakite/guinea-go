@@ -4,13 +4,21 @@ from app.common.base_model import BaseDocument
 from app.core.permissions import ensure_owner
 from app.modules.events.events.repository import EventRepository
 from app.modules.events.events.schemas import EventCreate
+from app.shared.resolver import LocationResolver
 
 
 class EventService:
     def __init__(self):
         self.repository = EventRepository()
+        self.location_resolver = LocationResolver()
+
+    async def _validate_location(self, data: EventCreate):
+        country = await self.location_resolver.resolve_country(data.country_id)
+        await self.location_resolver.resolve_city(data.city_id, country)
 
     async def create_event(self, data: EventCreate, organizer_id: str):
+        await self._validate_location(data)
+
         event = data.model_dump()
         event["category"] = event["category"].value
         event.update(BaseDocument.create())
@@ -25,10 +33,10 @@ class EventService:
         page: int,
         limit: int,
         search: str | None,
-        city: str | None,
+        city_id: str | None,
         category: str | None,
     ):
-        events = await self.repository.get_all(page, limit, search, city, category)
+        events = await self.repository.get_all(page, limit, search, city_id, category)
         return [self._format(event) for event in events]
 
     async def get_event(self, event_id: str):
@@ -46,6 +54,8 @@ class EventService:
             raise HTTPException(status_code=404, detail="Event not found.")
 
         ensure_owner(event["organizer_id"], user_id)
+
+        await self._validate_location(data)
 
         update_data = data.model_dump()
         update_data["category"] = update_data["category"].value
@@ -82,8 +92,8 @@ class EventService:
             "name": event["name"],
             "description": event.get("description"),
             "venue": event["venue"],
-            "city": event["city"],
-            "country_code": event["country_code"],
+            "country_id": event["country_id"],
+            "city_id": event["city_id"],
             "start_datetime": event["start_datetime"],
             "end_datetime": event["end_datetime"],
             "category": event["category"],
