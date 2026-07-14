@@ -128,6 +128,32 @@ async def _migrate_currency_via_parent(collection, parent_collection, parent_id_
         )
 
 
+async def _migrate_currency_from_parent_currency(collection, parent_collection, parent_id_field):
+    """currency_id, copied directly from a parent that already carries
+    its own currency_id (StudentFee via FeeSchedule) - unlike
+    _migrate_currency_via_parent above, which resolves through a
+    parent's country_id, this parent already IS the currency source
+    (same snapshot-at-apply-time reasoning as the live code path, see
+    fees/service.py's apply_fee_schedule). Must run after the parent
+    collection's own currency migration."""
+    cursor = collection.find({"currency_id": {"$exists": False}})
+
+    async for doc in cursor:
+        if not ObjectId.is_valid(doc[parent_id_field]):
+            continue
+
+        parent = await parent_collection.find_one({"_id": ObjectId(doc[parent_id_field])})
+
+        if not parent or not parent.get("currency_id"):
+            print(f"⚠️ Skipping {collection.name} {doc['_id']}: parent {doc[parent_id_field]} has no resolved currency_id yet")
+            continue
+
+        await collection.update_one(
+            {"_id": doc["_id"]},
+            {"$set": {"currency_id": parent["currency_id"]}},
+        )
+
+
 async def migrate_companies_location():
     await _migrate_location_collection(db.companies)
 
@@ -168,6 +194,27 @@ async def migrate_products_currency():
     await _migrate_currency_via_parent(db.products, db.stores, "store_id", price_field="price")
 
 
+async def migrate_institutions_location():
+    await _migrate_location_collection(db.institutions)
+
+
+async def migrate_fee_schedules_currency():
+    # Must run after migrate_institutions_location().
+    await _migrate_currency_via_parent(
+        db.fee_schedules, db.institutions, "institution_id", price_field="amount"
+    )
+
+
+async def migrate_student_fees_currency():
+    # Must run after migrate_fee_schedules_currency(): StudentFee
+    # already snapshots amount_due from its FeeSchedule at apply time
+    # in the live code path, so its currency_id is backfilled the same
+    # way - copied from the schedule, not re-derived from a country.
+    await _migrate_currency_from_parent_currency(
+        db.student_fees, db.fee_schedules, "fee_schedule_id"
+    )
+
+
 async def run_migrations():
     await migrate_companies_location()
     await migrate_stations_location()
@@ -178,3 +225,6 @@ async def run_migrations():
     await migrate_ticket_types_currency()
     await migrate_stores_location()
     await migrate_products_currency()
+    await migrate_institutions_location()
+    await migrate_fee_schedules_currency()
+    await migrate_student_fees_currency()

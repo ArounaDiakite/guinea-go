@@ -8,6 +8,7 @@ from app.modules.education.fees.schemas import FeeScheduleCreate, StudentFeeCrea
 from app.modules.education.institutions.repository import InstitutionRepository
 from app.modules.education.students.repository import StudentRepository
 from app.payments.repository import PaymentRepository
+from app.shared.resolver import LocationResolver
 
 
 class FeeScheduleService:
@@ -15,6 +16,7 @@ class FeeScheduleService:
         self.repository = FeeScheduleRepository()
         self.institution_repository = InstitutionRepository()
         self.academic_unit_repository = AcademicUnitRepository()
+        self.location_resolver = LocationResolver()
 
     async def _get_owned_institution(self, institution_id: str, user_id: str):
         institution = await self.institution_repository.get_by_id(institution_id)
@@ -24,6 +26,10 @@ class FeeScheduleService:
 
         ensure_owner(institution["administrator_id"], user_id)
         return institution
+
+    async def _resolve_currency(self, institution: dict, currency_id: str | None) -> str:
+        country = await self.location_resolver.resolve_country(institution["country_id"])
+        return await self.location_resolver.resolve_currency(currency_id, country)
 
     async def _validate_academic_unit(self, institution_id: str, academic_unit_id: str | None):
         if not academic_unit_id:
@@ -41,10 +47,13 @@ class FeeScheduleService:
             )
 
     async def create_fee_schedule(self, data: FeeScheduleCreate, user_id: str):
-        await self._get_owned_institution(data.institution_id, user_id)
+        institution = await self._get_owned_institution(data.institution_id, user_id)
         await self._validate_academic_unit(data.institution_id, data.academic_unit_id)
 
+        currency_id = await self._resolve_currency(institution, data.currency_id)
+
         fee_schedule = data.model_dump()
+        fee_schedule["currency_id"] = currency_id
         fee_schedule.update(BaseDocument.create())
 
         fee_schedule = await self.repository.create(fee_schedule)
@@ -71,7 +80,7 @@ class FeeScheduleService:
         if not schedule:
             raise HTTPException(status_code=404, detail="Fee schedule not found.")
 
-        await self._get_owned_institution(schedule["institution_id"], user_id)
+        institution = await self._get_owned_institution(schedule["institution_id"], user_id)
 
         if data.institution_id != schedule["institution_id"]:
             raise HTTPException(
@@ -81,7 +90,10 @@ class FeeScheduleService:
 
         await self._validate_academic_unit(data.institution_id, data.academic_unit_id)
 
+        currency_id = await self._resolve_currency(institution, data.currency_id)
+
         update_data = data.model_dump()
+        update_data["currency_id"] = currency_id
         update_data.update(BaseDocument.update())
 
         updated = await self.repository.update(fee_schedule_id, update_data)
@@ -116,6 +128,7 @@ class FeeScheduleService:
             "academic_unit_id": schedule.get("academic_unit_id"),
             "name": schedule["name"],
             "amount": schedule["amount"],
+            "currency_id": schedule["currency_id"],
             "period": schedule["period"],
             "is_active": schedule["is_active"],
             "created_at": schedule.get("created_at"),
@@ -182,6 +195,7 @@ class StudentFeeService:
             "student_id": student_id,
             "fee_schedule_id": data.fee_schedule_id,
             "amount_due": schedule["amount"],
+            "currency_id": schedule["currency_id"],
             "amount_paid": 0.0,
             "status": "unpaid",
         }
@@ -211,6 +225,7 @@ class StudentFeeService:
             "amount_remaining": round(
                 student_fee["amount_due"] - student_fee["amount_paid"], 2
             ),
+            "currency_id": student_fee["currency_id"],
             "status": student_fee["status"],
             "payments": [
                 {

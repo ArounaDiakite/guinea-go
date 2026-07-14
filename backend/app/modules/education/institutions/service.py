@@ -15,6 +15,7 @@ from app.modules.education.institutions.schemas import (
     PRIVATE_INSTITUTION_TYPES,
     PUBLIC_INSTITUTION_TYPES,
 )
+from app.shared.resolver import LocationResolver
 
 _ALREADY_HAS_INSTITUTION_MESSAGE = (
     "You already administer an institution. Only one institution per "
@@ -26,6 +27,11 @@ class InstitutionService:
     def __init__(self):
         self.repository = InstitutionRepository()
         self.auth_service = AuthService()
+        self.location_resolver = LocationResolver()
+
+    async def _validate_location(self, country_id: str, city_id: str):
+        country = await self.location_resolver.resolve_country(country_id)
+        await self.location_resolver.resolve_city(city_id, country)
 
     async def create_institution(self, data: InstitutionCreate, administrator_id: str):
         # Advisory check for a clean error in the common case; the unique
@@ -35,6 +41,8 @@ class InstitutionService:
 
         if existing:
             raise HTTPException(status_code=400, detail=_ALREADY_HAS_INSTITUTION_MESSAGE)
+
+        await self._validate_location(data.country_id, data.city_id)
 
         institution = data.model_dump()
         institution["institution_type"] = institution["institution_type"].value
@@ -127,6 +135,8 @@ class InstitutionService:
     async def _create_profile(
         self, profile: InstitutionProfileCreate, account: dict, session=None
     ):
+        await self._validate_location(profile.country_id, profile.city_id)
+
         institution = profile.model_dump()
         institution["institution_type"] = institution["institution_type"].value
         institution.update(BaseDocument.create())
@@ -165,6 +175,8 @@ class InstitutionService:
 
         ensure_owner(institution["administrator_id"], user_id)
 
+        await self._validate_location(data.country_id, data.city_id)
+
         update_data = data.model_dump()
         update_data["institution_type"] = update_data["institution_type"].value
         update_data.update(BaseDocument.update())
@@ -199,8 +211,8 @@ class InstitutionService:
             "id": str(institution["_id"]),
             "name": institution["name"],
             "address": institution["address"],
-            "city": institution["city"],
-            "country_code": institution["country_code"],
+            "country_id": institution["country_id"],
+            "city_id": institution["city_id"],
             "institution_type": institution["institution_type"],
             "administrator_id": institution["administrator_id"],
             "is_active": institution["is_active"],

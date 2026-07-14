@@ -53,8 +53,8 @@ assert not (PUBLIC_INSTITUTION_TYPES & PRIVATE_INSTITUTION_TYPES)
 class InstitutionCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=150)
     address: str = Field(..., min_length=2, max_length=255)
-    city: str = Field(..., min_length=2, max_length=100)
-    country_code: str = Field(..., min_length=2, max_length=3)
+    country_id: str
+    city_id: str
     institution_type: InstitutionType
 
 
@@ -62,8 +62,8 @@ class InstitutionResponse(BaseModel):
     id: str
     name: str
     address: str
-    city: str
-    country_code: str
+    country_id: str
+    city_id: str
     institution_type: InstitutionType
     administrator_id: str
     is_active: bool
@@ -75,12 +75,14 @@ class InstitutionProfileCreate(BaseModel):
     """Institution fields for the combined account + institution
     creation flows (POST /admin/institutions, POST /auth/register-
     institution). Identity fields for the school_administrator account
-    itself come from InstitutionAccountCreate's RegisterRequest base."""
+    itself come from InstitutionAccountCreate's RegisterRequest base
+    (its own city/country_code are the person's own, unrelated to the
+    institution's - left untouched)."""
 
     name: str = Field(..., min_length=2, max_length=150)
     address: str = Field(..., min_length=2, max_length=255)
-    city: str = Field(..., min_length=2, max_length=100)
-    country_code: str = Field(..., min_length=2, max_length=3)
+    country_id: str
+    city_id: str
     institution_type: InstitutionType
 
 

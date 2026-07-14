@@ -11,6 +11,10 @@ class FeeScheduleCreate(BaseModel):
     academic_unit_id: Optional[str] = None
     name: str = Field(..., min_length=1, max_length=150)
     amount: float = Field(..., gt=0)
+    # Defaults to the owning institution's own country's currency when
+    # omitted - no need to specify it if it's derivable from the
+    # parent resource.
+    currency_id: Optional[str] = None
     # Free text on purpose, same reasoning as AcademicUnit.level: a
     # primary school's "trimestriel" and a university's "semestriel"
     # don't share a common enum without being awkwardly overloaded.
@@ -23,6 +27,7 @@ class FeeScheduleResponse(BaseModel):
     academic_unit_id: Optional[str] = None
     name: str
     amount: float
+    currency_id: str
     period: str
     is_active: bool
     created_at: Optional[datetime] = None
@@ -50,6 +55,11 @@ class StudentFeeResponse(BaseModel):
     amount_due: float
     amount_paid: float
     amount_remaining: float
+    # Snapshotted from the FeeSchedule at apply time, same reasoning as
+    # amount_due: if the schedule's currency is ever changed later, an
+    # already-applied StudentFee shouldn't have its frozen amount_due
+    # silently reinterpreted under a different currency.
+    currency_id: str
     status: str
     payments: list[FeePaymentSummary] = []
     is_active: bool
