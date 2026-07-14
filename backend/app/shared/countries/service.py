@@ -2,11 +2,13 @@ from fastapi import HTTPException
 
 from app.shared.countries.repository import CountryRepository
 from app.shared.countries.schemas import CountryCreate, CountryResponse
+from app.shared.currencies.repository import CurrencyRepository
 
 
 class CountryService:
     def __init__(self):
         self.repository = CountryRepository()
+        self.currency_repository = CurrencyRepository()
 
     async def create_country(self, data: CountryCreate):
         existing_country = await self.repository.get_country_by_code(data.code)
@@ -17,9 +19,20 @@ class CountryService:
                 detail="Country already exists."
             )
 
-        country_data = data.model_dump()
+        currency = await self.currency_repository.get_by_code(data.currency_code)
+
+        if not currency:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Currency '{data.currency_code}' does not exist. "
+                    "Create it via POST /currencies first."
+                ),
+            )
+
+        country_data = data.model_dump(exclude={"currency_code"})
         country_data["code"] = data.code.upper()
-        country_data["currency"] = data.currency.upper()
+        country_data["currency_id"] = str(currency["_id"])
         country_data["languages"] = [lang.lower() for lang in data.languages]
 
         country = await self.repository.create_country(country_data)
@@ -35,7 +48,7 @@ class CountryService:
             "id": str(country["_id"]),
             "code": country["code"],
             "name": country["name"],
-            "currency": country["currency"],
+            "currency_id": country["currency_id"],
             "timezone": country["timezone"],
             "languages": country["languages"],
             "payment_methods": country["payment_methods"],
