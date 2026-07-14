@@ -82,7 +82,8 @@ async def create_indexes():
     # respective get_all() queries.
     await db.categories.create_index("category_parent_id")
     await db.stores.create_index("owner_id")
-    await db.stores.create_index("city")
+    await db.stores.create_index("city_id")
+    await db.stores.create_index("country_id")
     await db.products.create_index("category_ids")
     await db.products.create_index("store_id")
 

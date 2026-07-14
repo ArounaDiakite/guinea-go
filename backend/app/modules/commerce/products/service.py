@@ -5,12 +5,18 @@ from app.core.permissions import ensure_owner
 from app.modules.commerce.products.repository import ProductRepository
 from app.modules.commerce.products.schemas import ProductCreate
 from app.modules.commerce.stores.repository import StoreRepository
+from app.shared.resolver import LocationResolver
 
 
 class ProductService:
     def __init__(self):
         self.repository = ProductRepository()
         self.store_repository = StoreRepository()
+        self.location_resolver = LocationResolver()
+
+    async def _resolve_currency(self, store: dict, currency_id: str | None) -> str:
+        country = await self.location_resolver.resolve_country(store["country_id"])
+        return await self.location_resolver.resolve_currency(currency_id, country)
 
     async def create_product(self, data: ProductCreate, user_id: str):
         store = await self.store_repository.get_by_id(data.store_id)
@@ -20,12 +26,15 @@ class ProductService:
 
         ensure_owner(store["owner_id"], user_id)
 
+        currency_id = await self._resolve_currency(store, data.currency_id)
+
         product = data.model_dump()
         product.update(BaseDocument.create())
         # BaseDocument.create() always sets is_active=True - let the
         # creator's explicit choice win (e.g. adding a product before
         # it's ready to be listed).
         product["is_active"] = data.is_active
+        product["currency_id"] = currency_id
 
         product = await self.repository.create(product)
         return self._format(product)
@@ -62,7 +71,10 @@ class ProductService:
 
         ensure_owner(store["owner_id"], user_id)
 
+        currency_id = await self._resolve_currency(store, data.currency_id)
+
         update_data = data.model_dump()
+        update_data["currency_id"] = currency_id
         update_data.update(BaseDocument.update())
 
         updated = await self.repository.update(product_id, update_data)
@@ -102,6 +114,7 @@ class ProductService:
             "name": product["name"],
             "description": product.get("description"),
             "price": product["price"],
+            "currency_id": product["currency_id"],
             "category_ids": product.get("category_ids", []),
             "images": product.get("images", []),
             "stock": product["stock"],

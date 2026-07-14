@@ -9,6 +9,10 @@ class ProductCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=150)
     description: Optional[str] = None
     price: float = Field(..., gt=0)
+    # Defaults to the owning store's own country's currency when
+    # omitted - no need to specify it if it's derivable from the
+    # parent resource.
+    currency_id: Optional[str] = None
     category_ids: list[str] = []
     images: list[str] = []
     stock: int = Field(..., ge=0)
@@ -21,6 +25,7 @@ class ProductResponse(BaseModel):
     name: str
     description: Optional[str] = None
     price: float
+    currency_id: str
     category_ids: list[str] = []
     images: list[str] = []
     stock: int

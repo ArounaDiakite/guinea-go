@@ -159,6 +159,15 @@ async def migrate_ticket_types_currency():
     await _migrate_currency_via_parent(db.ticket_types, db.events, "event_id")
 
 
+async def migrate_stores_location():
+    await _migrate_location_collection(db.stores)
+
+
+async def migrate_products_currency():
+    # Must run after migrate_stores_location().
+    await _migrate_currency_via_parent(db.products, db.stores, "store_id", price_field="price")
+
+
 async def run_migrations():
     await migrate_companies_location()
     await migrate_stations_location()
@@ -167,3 +176,5 @@ async def run_migrations():
     await migrate_rooms_currency()
     await migrate_events_location()
     await migrate_ticket_types_currency()
+    await migrate_stores_location()
+    await migrate_products_currency()

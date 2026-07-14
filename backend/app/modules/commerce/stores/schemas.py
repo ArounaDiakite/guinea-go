@@ -10,8 +10,8 @@ class StoreCreate(BaseModel):
     logo_url: Optional[str] = None
     phone: str = Field(..., min_length=6, max_length=30)
     email: EmailStr
-    country_code: str = Field(..., min_length=2, max_length=3)
-    city: str = Field(..., min_length=2, max_length=100)
+    country_id: str
+    city_id: str
     address: str = Field(..., min_length=2, max_length=255)
     shipping_info: Optional[str] = None
 
@@ -23,8 +23,8 @@ class StoreResponse(BaseModel):
     logo_url: Optional[str] = None
     phone: str
     email: EmailStr
-    country_code: str
-    city: str
+    country_id: str
+    city_id: str
     address: str
     shipping_info: Optional[str] = None
     owner_id: str

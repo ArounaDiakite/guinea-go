@@ -30,10 +30,10 @@ async def get_stores(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     search: Optional[str] = None,
-    city: Optional[str] = None,
+    city_id: Optional[str] = None,
     owner_id: Optional[str] = None,
 ):
-    return await service.get_stores(page, limit, search, city, owner_id)
+    return await service.get_stores(page, limit, search, city_id, owner_id)
 
 
 @router.get("/{store_id}", response_model=StoreResponse)

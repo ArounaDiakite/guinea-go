@@ -4,16 +4,24 @@ from app.common.base_model import BaseDocument
 from app.core.permissions import ensure_owner
 from app.modules.commerce.stores.repository import StoreRepository
 from app.modules.commerce.stores.schemas import StoreCreate
+from app.shared.resolver import LocationResolver
 
 
 class StoreService:
     def __init__(self):
         self.repository = StoreRepository()
+        self.location_resolver = LocationResolver()
+
+    async def _validate_location(self, data: StoreCreate):
+        country = await self.location_resolver.resolve_country(data.country_id)
+        await self.location_resolver.resolve_city(data.city_id, country)
 
     async def create_store(self, data: StoreCreate, owner_id: str):
         # A store_manager may run more than one store - no 1:1
         # constraint here, the simplest option that still leaves room
         # for a "one store only" rule later without a data migration.
+        await self._validate_location(data)
+
         store = data.model_dump()
         store.update(BaseDocument.create())
         store["owner_id"] = owner_id
@@ -22,8 +30,8 @@ class StoreService:
         store = await self.repository.create(store)
         return self._format(store)
 
-    async def get_stores(self, page: int, limit: int, search: str | None, city: str | None, owner_id: str | None):
-        stores = await self.repository.get_all(page, limit, search, city, owner_id)
+    async def get_stores(self, page: int, limit: int, search: str | None, city_id: str | None, owner_id: str | None):
+        stores = await self.repository.get_all(page, limit, search, city_id, owner_id)
         return [self._format(store) for store in stores]
 
     async def get_store(self, store_id: str):
@@ -41,6 +49,8 @@ class StoreService:
             raise HTTPException(status_code=404, detail="Store not found.")
 
         ensure_owner(store["owner_id"], user_id)
+
+        await self._validate_location(data)
 
         update_data = data.model_dump()
         update_data.update(BaseDocument.update())
@@ -78,8 +88,8 @@ class StoreService:
             "logo_url": store.get("logo_url"),
             "phone": store["phone"],
             "email": store["email"],
-            "country_code": store["country_code"],
-            "city": store["city"],
+            "country_id": store["country_id"],
+            "city_id": store["city_id"],
             "address": store["address"],
             "shipping_info": store.get("shipping_info"),
             "owner_id": store["owner_id"],

@@ -17,7 +17,7 @@ class StoreRepository:
         page: int = 1,
         limit: int = 20,
         search: str | None = None,
-        city: str | None = None,
+        city_id: str | None = None,
         owner_id: str | None = None,
     ):
         query = {"is_deleted": False}
@@ -25,8 +25,8 @@ class StoreRepository:
         if search:
             query["name"] = {"$regex": search, "$options": "i"}
 
-        if city:
-            query["city"] = {"$regex": city, "$options": "i"}
+        if city_id:
+            query["city_id"] = city_id
 
         if owner_id:
             query["owner_id"] = owner_id
