@@ -23,6 +23,10 @@ class RoomCreate(BaseModel):
     room_type: RoomType
     capacity: int = Field(..., ge=1, le=20)
     base_price: float = Field(..., gt=0)
+    # Defaults to the owning hotel's own country's currency when
+    # omitted - no need to specify it if it's derivable from the
+    # parent resource.
+    currency_id: Optional[str] = None
     description: Optional[str] = None
     status: RoomStatus = RoomStatus.AVAILABLE
 
@@ -34,6 +38,7 @@ class RoomResponse(BaseModel):
     room_type: RoomType
     capacity: int
     base_price: float
+    currency_id: str
     description: Optional[str] = None
     status: RoomStatus
     is_active: bool

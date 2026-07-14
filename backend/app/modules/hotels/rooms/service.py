@@ -5,12 +5,18 @@ from app.core.permissions import ensure_owner
 from app.modules.hotels.hotels.repository import HotelRepository
 from app.modules.hotels.rooms.repository import RoomRepository
 from app.modules.hotels.rooms.schemas import RoomCreate
+from app.shared.resolver import LocationResolver
 
 
 class RoomService:
     def __init__(self):
         self.repository = RoomRepository()
         self.hotel_repository = HotelRepository()
+        self.location_resolver = LocationResolver()
+
+    async def _resolve_currency(self, hotel: dict, currency_id: str | None) -> str:
+        country = await self.location_resolver.resolve_country(hotel["country_id"])
+        return await self.location_resolver.resolve_currency(currency_id, country)
 
     async def create_room(self, data: RoomCreate, user_id: str):
         hotel = await self.hotel_repository.get_by_id(data.hotel_id)
@@ -20,9 +26,12 @@ class RoomService:
 
         ensure_owner(hotel["owner_id"], user_id)
 
+        currency_id = await self._resolve_currency(hotel, data.currency_id)
+
         room = data.model_dump()
         room["room_type"] = room["room_type"].value
         room["status"] = room["status"].value
+        room["currency_id"] = currency_id
         room.update(BaseDocument.create())
 
         room = await self.repository.create(room)
@@ -60,9 +69,12 @@ class RoomService:
 
         ensure_owner(hotel["owner_id"], user_id)
 
+        currency_id = await self._resolve_currency(hotel, data.currency_id)
+
         update_data = data.model_dump()
         update_data["room_type"] = update_data["room_type"].value
         update_data["status"] = update_data["status"].value
+        update_data["currency_id"] = currency_id
         update_data.update(BaseDocument.update())
 
         updated_room = await self.repository.update(room_id, update_data)
@@ -103,6 +115,7 @@ class RoomService:
             "room_type": room["room_type"],
             "capacity": room["capacity"],
             "base_price": room["base_price"],
+            "currency_id": room["currency_id"],
             "description": room.get("description"),
             "status": room["status"],
             "is_active": room["is_active"],

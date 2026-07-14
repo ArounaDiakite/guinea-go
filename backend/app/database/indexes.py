@@ -57,7 +57,8 @@ async def create_indexes():
 
     # Hotels / Rooms / hotel_bookings - fields filtered on in their
     # respective get_all()/has_overlap() queries.
-    await db.hotels.create_index("city")
+    await db.hotels.create_index("city_id")
+    await db.hotels.create_index("country_id")
     await db.rooms.create_index("hotel_id")
     await db.rooms.create_index("status")
     await db.hotel_bookings.create_index("passenger_id")

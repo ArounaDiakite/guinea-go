@@ -10,8 +10,8 @@ class HotelCreate(BaseModel):
     phone: str = Field(..., min_length=6, max_length=30)
     email: EmailStr
     website: Optional[str] = None
-    country_code: str = Field(..., min_length=2, max_length=3)
-    city: str = Field(..., min_length=2, max_length=100)
+    country_id: str
+    city_id: str
     address: str = Field(..., min_length=2, max_length=255)
     amenities: list[str] = []
 
@@ -23,8 +23,8 @@ class HotelResponse(BaseModel):
     phone: str
     email: EmailStr
     website: Optional[str] = None
-    country_code: str
-    city: str
+    country_id: str
+    city_id: str
     address: str
     amenities: list[str] = []
     owner_id: str

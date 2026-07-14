@@ -10,7 +10,13 @@ shared/currencies to already be seeded.
 
 Grown module by module as each business module is converted from free-
 text country_code/city to real country_id/city_id/currency_id
-references - see CLAUDE.md's "Données de référence" section.
+references - see CLAUDE.md's "Données de référence" section. The three
+_migrate_* helpers below are generic (collection-agnostic) since every
+module needs the exact same two shapes: a top-level entity with
+country_code/city to migrate to country_id/city_id (or city_id alone,
+for a Station-like entity whose country is only ever derived through
+its city), and a child entity whose currency_id is inherited from its
+parent's already-migrated country_id.
 """
 
 from bson import ObjectId
@@ -42,80 +48,111 @@ async def _resolve_country_and_city(country_code: str, city_name: str | None):
     return str(country["_id"]), city_id
 
 
-async def migrate_companies_location():
-    cursor = db.companies.find({
+async def _migrate_location_collection(collection):
+    """country_code/city (free text) -> country_id/city_id, for a top-
+    level entity that owns its own location (Company, Hotel, Event,
+    Store, Institution)."""
+    cursor = collection.find({
         "country_id": {"$exists": False},
         "country_code": {"$exists": True},
     })
 
-    async for company in cursor:
+    async for doc in cursor:
         country_id, city_id = await _resolve_country_and_city(
-            company["country_code"], company.get("city")
+            doc["country_code"], doc.get("city")
         )
 
         if not country_id:
-            print(f"⚠️ Skipping company {company['_id']}: unknown country_code {company['country_code']!r}")
+            print(f"⚠️ Skipping {collection.name} {doc['_id']}: unknown country_code {doc['country_code']!r}")
             continue
 
         update = {"country_id": country_id}
         if city_id:
             update["city_id"] = city_id
 
-        await db.companies.update_one(
-            {"_id": company["_id"]},
+        await collection.update_one(
+            {"_id": doc["_id"]},
             {"$set": update, "$unset": {"country_code": "", "city": ""}},
         )
 
 
-async def migrate_stations_location():
-    cursor = db.stations.find({
+async def _migrate_city_only_collection(collection):
+    """country_code/city (free text) -> city_id only, for an entity
+    whose country is always derivable through its city (Station)."""
+    cursor = collection.find({
         "city_id": {"$exists": False},
         "country_code": {"$exists": True},
     })
 
-    async for station in cursor:
+    async for doc in cursor:
         _, city_id = await _resolve_country_and_city(
-            station["country_code"], station.get("city")
+            doc["country_code"], doc.get("city")
         )
 
         if not city_id:
-            print(f"⚠️ Skipping station {station['_id']}: could not resolve city {station.get('city')!r} in {station['country_code']!r}")
+            print(f"⚠️ Skipping {collection.name} {doc['_id']}: could not resolve city {doc.get('city')!r} in {doc['country_code']!r}")
             continue
 
-        await db.stations.update_one(
-            {"_id": station["_id"]},
+        await collection.update_one(
+            {"_id": doc["_id"]},
             {"$set": {"city_id": city_id}, "$unset": {"country_code": "", "city": ""}},
         )
 
 
-async def migrate_routes_currency():
-    # Must run after migrate_companies_location(): resolves each
-    # route's currency via its company's (already-migrated) country.
-    cursor = db.routes.find({
+async def _migrate_currency_via_parent(collection, parent_collection, parent_id_field, price_field="base_price"):
+    """currency_id, inherited from the parent's (already-migrated)
+    country_id, for a child entity that carries a price (Route via
+    Company, Room via Hotel). Must run after the parent's own location
+    migration."""
+    cursor = collection.find({
         "currency_id": {"$exists": False},
-        "base_price": {"$exists": True},
+        price_field: {"$exists": True},
     })
 
-    async for route in cursor:
-        company = await db.companies.find_one({"_id": ObjectId(route["company_id"])})
+    async for doc in cursor:
+        parent = await parent_collection.find_one({"_id": ObjectId(doc[parent_id_field])})
 
-        if not company or not company.get("country_id"):
-            print(f"⚠️ Skipping route {route['_id']}: company {route['company_id']} has no resolved country_id yet")
+        if not parent or not parent.get("country_id"):
+            print(f"⚠️ Skipping {collection.name} {doc['_id']}: parent {doc[parent_id_field]} has no resolved country_id yet")
             continue
 
-        country = await db.countries.find_one({"_id": ObjectId(company["country_id"])})
+        country = await db.countries.find_one({"_id": ObjectId(parent["country_id"])})
 
         if not country:
-            print(f"⚠️ Skipping route {route['_id']}: company's country_id does not resolve")
+            print(f"⚠️ Skipping {collection.name} {doc['_id']}: parent's country_id does not resolve")
             continue
 
-        await db.routes.update_one(
-            {"_id": route["_id"]},
+        await collection.update_one(
+            {"_id": doc["_id"]},
             {"$set": {"currency_id": country["currency_id"]}},
         )
+
+
+async def migrate_companies_location():
+    await _migrate_location_collection(db.companies)
+
+
+async def migrate_stations_location():
+    await _migrate_city_only_collection(db.stations)
+
+
+async def migrate_routes_currency():
+    # Must run after migrate_companies_location().
+    await _migrate_currency_via_parent(db.routes, db.companies, "company_id")
+
+
+async def migrate_hotels_location():
+    await _migrate_location_collection(db.hotels)
+
+
+async def migrate_rooms_currency():
+    # Must run after migrate_hotels_location().
+    await _migrate_currency_via_parent(db.rooms, db.hotels, "hotel_id")
 
 
 async def run_migrations():
     await migrate_companies_location()
     await migrate_stations_location()
     await migrate_routes_currency()
+    await migrate_hotels_location()
+    await migrate_rooms_currency()
