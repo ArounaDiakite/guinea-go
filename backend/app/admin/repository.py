@@ -1,6 +1,6 @@
 from bson import ObjectId
 
-from app.core.constants import PARTNER_ROLES
+from app.core.constants import ADMIN_VALIDATED_ROLES
 from app.core.utils import utc_now
 from app.database.mongodb import db
 
@@ -13,7 +13,7 @@ class AdminRepository:
         cursor = self.collection.find(
             {
                 "is_active": False,
-                "role": {"$in": [role.value for role in PARTNER_ROLES]},
+                "role": {"$in": [role.value for role in ADMIN_VALIDATED_ROLES]},
             }
         )
         return await cursor.to_list(length=None)

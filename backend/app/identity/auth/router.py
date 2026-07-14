@@ -9,6 +9,11 @@ from app.identity.auth.schemas import (
     TokenResponse,
 )
 from app.identity.auth.service import AuthService
+from app.modules.education.institutions.schemas import (
+    InstitutionAccountCreate,
+    InstitutionWithAccountResponse,
+)
+from app.modules.education.institutions.service import InstitutionService
 
 router = APIRouter(
     prefix="/auth",
@@ -16,6 +21,7 @@ router = APIRouter(
 )
 
 service = AuthService()
+institution_service = InstitutionService()
 
 
 @router.get("/")
@@ -34,6 +40,11 @@ async def register(data: RegisterRequest):
 @router.post("/register-partner", response_model=PartnerRegisterResponse)
 async def register_partner(data: RegisterPartnerRequest):
     return await service.register_partner(data)
+
+
+@router.post("/register-institution", response_model=InstitutionWithAccountResponse)
+async def register_institution(data: InstitutionAccountCreate):
+    return await institution_service.register_private_institution(data)
 
 
 @router.post("/login", response_model=TokenResponse)
