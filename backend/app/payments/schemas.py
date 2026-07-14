@@ -5,18 +5,12 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
-class PaymentProviderCreate(BaseModel):
-    code: str
-    name: str
-    provider_type: str
-    country_code: str
-    is_active: bool = True
-
-
-class PaymentProviderResponse(PaymentProviderCreate):
-    id: str
-
-
+# Hardcoded rather than backed by a database collection: every payment
+# in this app is sandbox-simulated (see PaymentService), so there's no
+# real gateway integration yet to justify a dynamic, DB-managed provider
+# registry. Revisit if/when real Orange Money/MTN/Stripe integrations
+# land and providers need to be enabled/disabled per country without a
+# deploy.
 class PaymentProvider(str, Enum):
     ORANGE_MONEY = "orange_money"
     MTN_MOMO = "mtn_momo"
