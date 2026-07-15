@@ -254,6 +254,33 @@ void main() {
     expect(find.byType(LoginScreen), findsNothing);
   });
 
+  testWidgets('a deep link straight to a /hub route without a session redirects to login', (tester) async {
+    // No token in storage at all - simulates an OS-level deep link (a
+    // notification tap, a shared URL, ...) opening the app straight on
+    // a /hub/* route, bypassing the splash screen entirely. The router
+    // guard, not the splash screen's own session-restore flow, is what
+    // has to catch this.
+    await TokenStorage.clear();
+
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [initialLocationProvider.overrideWithValue('/hub/transport/bookings')],
+          child: const GuineaGoApp(),
+        ),
+      );
+      await tester.pump();
+      // The guard awaits authControllerProvider.future (a secure-storage
+      // read, no network call) before deciding - generous margin still
+      // covers it comfortably.
+      await Future.delayed(const Duration(seconds: 2));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.byType(HubScaffold), findsNothing);
+  });
+
   testWidgets('logging in with a wrong password shows the backend error and stores nothing', (tester) async {
     await TokenStorage.clear();
 

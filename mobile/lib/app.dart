@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_theme.dart';
@@ -6,6 +7,7 @@ import 'features/hub/presentation/home_hub_screen.dart';
 import 'features/hub/presentation/hub_scaffold.dart';
 import 'features/hub/presentation/module_placeholder_screen.dart';
 import 'features/hub/presentation/profile_screen.dart';
+import 'features/identity/application/auth_controller.dart';
 import 'features/identity/presentation/login_screen.dart';
 import 'features/identity/presentation/register_screen.dart';
 import 'features/splash/splash_screen.dart';
@@ -13,17 +15,42 @@ import 'features/transport/models/booking.dart';
 import 'features/transport/models/trip_search_params.dart';
 import 'features/transport/models/trip_seat.dart';
 import 'features/transport/presentation/booking_screen.dart';
+import 'features/transport/presentation/my_bookings_screen.dart';
 import 'features/transport/presentation/payment_screen.dart';
 import 'features/transport/presentation/results_screen.dart';
 import 'features/transport/presentation/search_screen.dart';
 import 'features/transport/presentation/trip_detail_screen.dart';
 
+/// Overridable in tests to land the router somewhere other than the
+/// splash screen (e.g. straight on a /hub/* deep link), without having
+/// to duplicate the whole route table.
+final initialLocationProvider = Provider<String>((ref) => '/');
+
+/// Route-level auth guard for everything under /hub/*: rather than
+/// relying on each screen's own API calls to fail with a 401 once
+/// they're already visible, this blocks navigation into the hub shell
+/// up front whenever there's no valid session - covers a deep link
+/// landing straight on a hub route, not just in-app navigation coming
+/// from the splash screen. Splash/login/register keep managing their
+/// own flow untouched, since they're reachable without a session by
+/// design.
+final routerProvider = Provider<GoRouter>((ref) {
+  return GoRouter(
+    initialLocation: ref.watch(initialLocationProvider),
+    redirect: (context, state) async {
+      if (!state.matchedLocation.startsWith('/hub')) return null;
+
+      final user = await ref.read(authControllerProvider.future);
+      return user != null ? null : '/login';
+    },
+    routes: _routes,
+  );
+});
+
 // Branch order here MUST match hubDestinations in
 // features/hub/hub_destinations.dart - the shell picks its selected
 // tab by branch index.
-final appRouter = GoRouter(
-  initialLocation: '/',
-  routes: [
+final List<RouteBase> _routes = [
     GoRoute(
       path: '/',
       builder: (context, state) => const SplashScreen(),
@@ -53,6 +80,10 @@ final appRouter = GoRouter(
                 GoRoute(
                   path: 'results',
                   builder: (context, state) => ResultsScreen(params: state.extra as TripSearchParams),
+                ),
+                GoRoute(
+                  path: 'bookings',
+                  builder: (context, state) => const MyBookingsScreen(),
                 ),
                 GoRoute(
                   path: 'trips/:tripId',
@@ -129,19 +160,18 @@ final appRouter = GoRouter(
         ),
       ],
     ),
-  ],
-);
+  ];
 
-class GuineaGoApp extends StatelessWidget {
+class GuineaGoApp extends ConsumerWidget {
   const GuineaGoApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
       title: 'Guinea Go',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      routerConfig: appRouter,
+      routerConfig: ref.watch(routerProvider),
     );
   }
 }
