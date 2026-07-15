@@ -65,7 +65,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Transport')),
+      appBar: AppBar(
+        title: const Text('Transport'),
+        actions: [
+          IconButton(
+            tooltip: 'Mes réservations',
+            icon: const Icon(Icons.confirmation_number_outlined),
+            onPressed: () => context.push('/hub/transport/bookings'),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
