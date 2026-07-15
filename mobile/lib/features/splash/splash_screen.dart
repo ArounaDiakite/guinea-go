@@ -72,7 +72,11 @@ Future<void> _proceedPastSplash(BuildContext context, WidgetRef ref) async {
     return;
   }
 
-  context.go(user.role == 'driver' ? '/hub/driver/trips' : '/hub/home');
+  context.go(switch (user.role) {
+    'driver' => '/hub/driver/trips',
+    'company_owner' => '/hub/company',
+    _ => '/hub/home',
+  });
 }
 
 class _BrandMark extends StatelessWidget {

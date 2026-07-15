@@ -16,6 +16,7 @@ import 'features/transport/models/booking_summary.dart';
 import 'features/transport/models/trip_search_params.dart';
 import 'features/transport/models/trip_seat.dart';
 import 'features/transport/presentation/booking_screen.dart';
+import 'features/transport/presentation/company_home_screen.dart';
 import 'features/transport/presentation/my_bookings_screen.dart';
 import 'features/transport/presentation/payment_screen.dart';
 import 'features/transport/presentation/driver_trips_screen.dart';
@@ -184,6 +185,20 @@ final List<RouteBase> _routes = [
                   builder: (context, state) => const TicketScanScreen(),
                 ),
               ],
+            ),
+          ],
+        ),
+        // branchIndex 8 in hub_destinations.dart - company_owner-only.
+        // Every nested route below takes companyId via `extra` (a
+        // plain String, resolved once on CompanyHomeScreen and passed
+        // down at each push) rather than a path parameter, same
+        // pattern as passing a Booking/TripSeat/BookingSummary
+        // elsewhere in this route table.
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/hub/company',
+              builder: (context, state) => const CompanyHomeScreen(),
             ),
           ],
         ),

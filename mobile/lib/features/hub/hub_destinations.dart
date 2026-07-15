@@ -97,10 +97,31 @@ const List<HubDestination> _driverDestinations = [
   ),
 ];
 
+const List<HubDestination> _companyOwnerDestinations = [
+  HubDestination(
+    branchIndex: 8,
+    path: '/hub/company',
+    label: 'Ma compagnie',
+    icon: Icons.apartment_outlined,
+    selectedIcon: Icons.apartment_rounded,
+  ),
+  HubDestination(
+    branchIndex: 6,
+    path: '/hub/profile',
+    label: 'Profil',
+    icon: Icons.person_outline_rounded,
+    selectedIcon: Icons.person_rounded,
+  ),
+];
+
 /// Source of truth for UserRole values: backend/app/core/constants.py.
-/// Only `driver` gets a distinct nav set today - every other role
-/// (including passenger) falls back to the passenger tab set, since no
-/// other role has a dedicated hub experience yet.
+/// Only `driver` and `company_owner` get a distinct nav set today -
+/// every other role (including passenger) falls back to the passenger
+/// tab set, since no other role has a dedicated hub experience yet.
 List<HubDestination> hubDestinationsForRole(String? role) {
-  return role == 'driver' ? _driverDestinations : _passengerDestinations;
+  return switch (role) {
+    'driver' => _driverDestinations,
+    'company_owner' => _companyOwnerDestinations,
+    _ => _passengerDestinations,
+  };
 }
