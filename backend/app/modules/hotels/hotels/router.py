@@ -28,8 +28,9 @@ async def get_hotels(
     limit: int = Query(20, ge=1, le=100),
     search: Optional[str] = None,
     city_id: Optional[str] = None,
+    owner_id: Optional[str] = None,
 ):
-    return await service.get_hotels(page, limit, search, city_id)
+    return await service.get_hotels(page, limit, search, city_id, owner_id)
 
 
 @router.get("/{hotel_id}", response_model=HotelResponse)

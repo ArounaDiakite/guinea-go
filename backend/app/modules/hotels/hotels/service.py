@@ -27,8 +27,15 @@ class HotelService:
         hotel = await self.repository.create(hotel)
         return self._format(hotel)
 
-    async def get_hotels(self, page: int, limit: int, search: str | None, city_id: str | None):
-        hotels = await self.repository.get_all(page, limit, search, city_id)
+    async def get_hotels(
+        self,
+        page: int,
+        limit: int,
+        search: str | None,
+        city_id: str | None,
+        owner_id: str | None = None,
+    ):
+        hotels = await self.repository.get_all(page, limit, search, city_id, owner_id)
         return [self._format(hotel) for hotel in hotels]
 
     async def get_hotel(self, hotel_id: str):

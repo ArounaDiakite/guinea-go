@@ -1,8 +1,11 @@
+from datetime import date
+
 from fastapi import HTTPException
 
 from app.common.base_model import BaseDocument
 from app.core.permissions import ensure_owner
 from app.modules.hotels.hotels.repository import HotelRepository
+from app.modules.hotels.reservations.repository import HotelBookingRepository
 from app.modules.hotels.rooms.repository import RoomRepository
 from app.modules.hotels.rooms.schemas import RoomCreate
 from app.shared.resolver import LocationResolver
@@ -12,6 +15,7 @@ class RoomService:
     def __init__(self):
         self.repository = RoomRepository()
         self.hotel_repository = HotelRepository()
+        self.booking_repository = HotelBookingRepository()
         self.location_resolver = LocationResolver()
 
     async def _resolve_currency(self, hotel: dict, currency_id: str | None) -> str:
@@ -44,8 +48,19 @@ class RoomService:
         hotel_id: str | None,
         room_type: str | None,
         status: str | None,
+        check_in: date | None = None,
+        check_out: date | None = None,
     ):
-        rooms = await self.repository.get_all(page, limit, hotel_id, room_type, status)
+        exclude_room_ids = None
+
+        if check_in and check_out:
+            exclude_room_ids = await self.booking_repository.get_booked_room_ids(
+                check_in, check_out, hotel_id
+            )
+
+        rooms = await self.repository.get_all(
+            page, limit, hotel_id, room_type, status, exclude_room_ids
+        )
         return [self._format(room) for room in rooms]
 
     async def get_room(self, room_id: str):

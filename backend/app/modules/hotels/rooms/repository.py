@@ -26,6 +26,7 @@ class RoomRepository:
         hotel_id: str | None = None,
         room_type: str | None = None,
         status: str | None = None,
+        exclude_room_ids: list[str] | None = None,
     ):
         query = {"is_deleted": False}
 
@@ -37,6 +38,11 @@ class RoomRepository:
 
         if status:
             query["status"] = status
+
+        if exclude_room_ids:
+            query["_id"] = {
+                "$nin": [ObjectId(rid) for rid in exclude_room_ids if ObjectId.is_valid(rid)]
+            }
 
         cursor = (
             self.collection.find(query)

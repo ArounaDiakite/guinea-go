@@ -95,6 +95,33 @@ class HotelBookingRepository:
         )
         return await cursor.to_list(length=limit)
 
+    async def get_booked_room_ids(self, check_in, check_out, hotel_id: str | None = None) -> list[str]:
+        """Room ids with an active (PENDING_PAYMENT/CONFIRMED) booking
+        overlapping [check_in, check_out) - used to filter room search
+        results down to what's actually available for those dates."""
+        check_in_dt = datetime.combine(check_in, time.min)
+        check_out_dt = datetime.combine(check_out, time.min)
+
+        query = {
+            "status": {"$in": ["PENDING_PAYMENT", "CONFIRMED"]},
+            "check_in": {"$lt": check_out_dt},
+            "check_out": {"$gt": check_in_dt},
+        }
+
+        if hotel_id:
+            query["hotel_id"] = hotel_id
+
+        return await self.collection.distinct("room_id", query)
+
+    async def get_by_hotel(self, hotel_id: str, page: int = 1, limit: int = 20):
+        cursor = (
+            self.collection.find({"hotel_id": hotel_id})
+            .sort("created_at", -1)
+            .skip((page - 1) * limit)
+            .limit(limit)
+        )
+        return await cursor.to_list(length=limit)
+
     async def get_stale_pending_bookings(self, room_id: str, now):
         cursor = self.collection.find(
             {

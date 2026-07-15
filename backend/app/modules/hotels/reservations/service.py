@@ -6,6 +6,8 @@ from fastapi import HTTPException, status
 from app.common.base_model import BaseDocument
 from app.core.config import settings
 from app.core.utils import utc_now
+from app.core.permissions import ensure_owner
+from app.modules.hotels.hotels.repository import HotelRepository
 from app.modules.hotels.reservations.repository import HotelBookingRepository
 from app.modules.hotels.reservations.schemas import HotelBookingCreate
 from app.modules.hotels.rooms.repository import RoomRepository
@@ -23,6 +25,7 @@ class HotelBookingService:
     def __init__(self):
         self.repository = HotelBookingRepository()
         self.room_repository = RoomRepository()
+        self.hotel_repository = HotelRepository()
 
     async def create_booking(self, room_id: str, data: HotelBookingCreate, passenger_id: str):
         room = await self.room_repository.get_by_id(room_id)
@@ -132,6 +135,28 @@ class HotelBookingService:
 
     async def get_my_bookings(self, passenger_id: str, page: int, limit: int):
         bookings = await self.repository.get_by_passenger(passenger_id, page, limit)
+        return [self._format(booking) for booking in bookings]
+
+    async def get_booking(self, booking_id: str, passenger_id: str):
+        booking = await self.repository.get_by_id(booking_id)
+
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found.")
+
+        if booking["passenger_id"] != passenger_id:
+            raise HTTPException(status_code=403, detail="Not allowed.")
+
+        return self._format(booking)
+
+    async def get_bookings_for_hotel(self, hotel_id: str, user_id: str, page: int, limit: int):
+        hotel = await self.hotel_repository.get_by_id(hotel_id)
+
+        if not hotel:
+            raise HTTPException(status_code=404, detail="Hotel not found.")
+
+        ensure_owner(hotel["owner_id"], user_id)
+
+        bookings = await self.repository.get_by_hotel(hotel_id, page, limit)
         return [self._format(booking) for booking in bookings]
 
     def _format(self, booking):

@@ -18,6 +18,7 @@ class HotelRepository:
         limit: int = 20,
         search: str | None = None,
         city_id: str | None = None,
+        owner_id: str | None = None,
     ):
         query = {"is_deleted": False}
 
@@ -26,6 +27,9 @@ class HotelRepository:
 
         if city_id:
             query["city_id"] = city_id
+
+        if owner_id:
+            query["owner_id"] = owner_id
 
         cursor = (
             self.collection.find(query)

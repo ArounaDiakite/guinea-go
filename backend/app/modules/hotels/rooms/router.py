@@ -1,6 +1,7 @@
+from datetime import date
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.core.constants import UserRole
 from app.core.dependencies import require_permission, require_role
@@ -33,8 +34,20 @@ async def get_rooms(
     hotel_id: Optional[str] = None,
     room_type: Optional[str] = None,
     status: Optional[str] = None,
+    check_in: Optional[date] = None,
+    check_out: Optional[date] = None,
 ):
-    return await service.get_rooms(page, limit, hotel_id, room_type, status)
+    if (check_in is None) != (check_out is None):
+        raise HTTPException(
+            status_code=400, detail="check_in and check_out must be provided together."
+        )
+
+    if check_in and check_out and check_out <= check_in:
+        raise HTTPException(
+            status_code=400, detail="check_out must be after check_in."
+        )
+
+    return await service.get_rooms(page, limit, hotel_id, room_type, status, check_in, check_out)
 
 
 @router.get("/{room_id}", response_model=RoomResponse)
