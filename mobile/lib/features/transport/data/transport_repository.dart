@@ -236,6 +236,11 @@ class TransportRepository {
     return response.data!.map((json) => Booking.fromJson(json as Map<String, dynamic>)).toList();
   }
 
+  Future<Booking> getBooking(String bookingId) async {
+    final response = await _dio.get<Map<String, dynamic>>('/bookings/$bookingId');
+    return Booking.fromJson(response.data!);
+  }
+
   Future<Booking> cancelBooking(String bookingId) async {
     final response = await _dio.delete<Map<String, dynamic>>('/bookings/$bookingId');
     return Booking.fromJson(response.data!);

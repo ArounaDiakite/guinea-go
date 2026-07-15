@@ -21,6 +21,14 @@ async def get_my_bookings(
     return await service.get_my_bookings(current_user["sub"], page, limit)
 
 
+@router.get("/{booking_id}", response_model=BookingResponse)
+async def get_booking(
+    booking_id: str,
+    current_user=Depends(get_current_user),
+):
+    return await service.get_booking(booking_id, current_user["sub"])
+
+
 @router.delete("/{booking_id}", response_model=BookingResponse)
 async def cancel_booking(
     booking_id: str,

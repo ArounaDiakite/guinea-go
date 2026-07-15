@@ -158,6 +158,17 @@ class BookingService:
         bookings = await self.repository.get_by_passenger(passenger_id, page, limit)
         return [self._format(booking) for booking in bookings]
 
+    async def get_booking(self, booking_id: str, passenger_id: str):
+        booking = await self.repository.get_by_id(booking_id)
+
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found.")
+
+        if booking["passenger_id"] != passenger_id:
+            raise HTTPException(status_code=403, detail="Not allowed.")
+
+        return self._format(booking)
+
     def _format(self, booking):
         return {
             "id": str(booking["_id"]),

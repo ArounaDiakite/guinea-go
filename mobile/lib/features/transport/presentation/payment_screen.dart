@@ -32,8 +32,12 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   String? _errorMessage;
   late Booking _booking;
 
-  static const _pollInterval = Duration(seconds: 2);
-  static const _pollTimeout = Duration(seconds: 20);
+  // The sandbox payment endpoint returns immediately with status
+  // "pending" - the backend confirms it via a background task after its
+  // own SANDBOX_COMPLETION_DELAY_SECONDS (2s, see
+  // backend/app/payments/service.py). A small margin over that covers
+  // normal scheduling jitter without turning this into a poll loop.
+  static const _confirmationWait = Duration(seconds: 4);
 
   @override
   void initState() {
@@ -52,7 +56,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           .read(transportRepositoryProvider)
           .payForBooking(bookingId: _booking.id, provider: _selectedProvider, amount: _booking.pricePaid);
       if (mounted) setState(() => _phase = _PaymentPhase.waitingConfirmation);
-      await _pollUntilConfirmed();
+      await _awaitConfirmation();
     } catch (error) {
       if (mounted) {
         setState(() {
@@ -63,56 +67,47 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     }
   }
 
-  /// The sandbox payment endpoint returns immediately with status
-  /// "pending" - the backend confirms it ~2s later via a background
-  /// task, with no webhook/callback the client can await. Re-fetching
-  /// the booking list is the only way to observe the flip to
-  /// CONFIRMED (there's no GET booking-by-id endpoint).
-  Future<void> _pollUntilConfirmed() async {
-    final deadline = DateTime.now().add(_pollTimeout);
+  Future<void> _awaitConfirmation() async {
+    await Future.delayed(_confirmationWait);
+    if (!mounted) return;
 
-    while (DateTime.now().isBefore(deadline)) {
-      await Future.delayed(_pollInterval);
-      if (!mounted) return;
+    try {
+      final booking = await ref.read(transportRepositoryProvider).getBooking(_booking.id);
 
-      try {
-        final bookings = await ref.read(transportRepositoryProvider).getMyBookings();
-        Booking? match;
-        for (final candidate in bookings) {
-          if (candidate.id == _booking.id) {
-            match = candidate;
-            break;
-          }
+      if (booking.status == BookingStatus.confirmed) {
+        if (mounted) {
+          setState(() {
+            _booking = booking;
+            _phase = _PaymentPhase.confirmed;
+          });
         }
-
-        if (match == null) continue;
-
-        if (match.status == BookingStatus.confirmed) {
-          if (mounted) setState(() => _phase = _PaymentPhase.confirmed);
-          return;
-        }
-
-        if (match.status == BookingStatus.cancelled || match.status == BookingStatus.expired) {
-          if (mounted) {
-            setState(() {
-              _phase = _PaymentPhase.failed;
-              _errorMessage = 'Le paiement a échoué. La réservation n\'est plus disponible.';
-            });
-          }
-          return;
-        }
-      } catch (_) {
-        // A transient poll failure isn't fatal - keep trying until the
-        // deadline, the same as a slow-but-successful confirmation.
+        return;
       }
-    }
 
-    if (mounted) {
-      setState(() {
-        _phase = _PaymentPhase.failed;
-        _errorMessage = 'La confirmation prend plus de temps que prévu. '
-            'Vérifiez "Mes réservations" dans quelques instants.';
-      });
+      if (booking.status == BookingStatus.cancelled || booking.status == BookingStatus.expired) {
+        if (mounted) {
+          setState(() {
+            _phase = _PaymentPhase.failed;
+            _errorMessage = 'Le paiement a échoué. La réservation n\'est plus disponible.';
+          });
+        }
+        return;
+      }
+
+      if (mounted) {
+        setState(() {
+          _phase = _PaymentPhase.failed;
+          _errorMessage = 'La confirmation prend plus de temps que prévu. '
+              'Vérifiez "Mes réservations" dans quelques instants.';
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _phase = _PaymentPhase.failed;
+          _errorMessage = extractApiErrorMessage(error);
+        });
+      }
     }
   }
 
