@@ -10,6 +10,7 @@ import '../models/driver.dart';
 import '../models/payment.dart';
 import '../models/station.dart';
 import '../models/ticket.dart';
+import '../models/ticket_validation_result.dart';
 import '../models/transport_company.dart';
 import '../models/transport_route.dart';
 import '../models/trip.dart';
@@ -346,6 +347,11 @@ class TransportRepository {
 
     results.sort((a, b) => a.trip.departureDatetime.compareTo(b.trip.departureDatetime));
     return results;
+  }
+
+  Future<TicketValidationResult> validateTicket(String code) async {
+    final response = await _dio.post<Map<String, dynamic>>('/tickets/$code/validate');
+    return TicketValidationResult.fromJson(response.data!);
   }
 }
 

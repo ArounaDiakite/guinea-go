@@ -6,6 +6,8 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Guinea Go a besoin de la caméra pour scanner les tickets des passagers à l'embarquement.</string>
 	<key>CFBundleDisplayName</key>
 	<string>Guinea Go</string>
 	<key>CFBundleExecutable</key>

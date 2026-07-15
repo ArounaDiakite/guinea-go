@@ -1,20 +1,11 @@
-enum TicketStatus { valid, used, cancelled, unknown }
+import 'ticket.dart';
 
-TicketStatus parseTicketStatus(String raw) {
-  switch (raw) {
-    case 'VALID':
-      return TicketStatus.valid;
-    case 'USED':
-      return TicketStatus.used;
-    case 'CANCELLED':
-      return TicketStatus.cancelled;
-    default:
-      return TicketStatus.unknown;
-  }
-}
-
-class Ticket {
-  const Ticket({
+/// POST /tickets/{code}/validate's response - a Ticket plus the
+/// passenger name and seat number the backend resolves server-side,
+/// since there's no general-purpose "look up another user" endpoint
+/// for the scanning driver to call itself.
+class TicketValidationResult {
+  const TicketValidationResult({
     required this.id,
     required this.bookingId,
     required this.tripId,
@@ -23,6 +14,8 @@ class Ticket {
     required this.code,
     required this.status,
     required this.usedAt,
+    required this.passengerName,
+    required this.seatNumber,
   });
 
   final String id;
@@ -33,9 +26,11 @@ class Ticket {
   final String code;
   final TicketStatus status;
   final DateTime? usedAt;
+  final String passengerName;
+  final String seatNumber;
 
-  factory Ticket.fromJson(Map<String, dynamic> json) {
-    return Ticket(
+  factory TicketValidationResult.fromJson(Map<String, dynamic> json) {
+    return TicketValidationResult(
       id: json['id'] as String,
       bookingId: json['booking_id'] as String,
       tripId: json['trip_id'] as String,
@@ -44,6 +39,8 @@ class Ticket {
       code: json['code'] as String,
       status: parseTicketStatus(json['status'] as String),
       usedAt: json['used_at'] != null ? DateTime.parse(json['used_at'] as String) : null,
+      passengerName: json['passenger_name'] as String,
+      seatNumber: json['seat_number'] as String,
     );
   }
 }

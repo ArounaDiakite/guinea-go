@@ -21,6 +21,7 @@ import 'features/transport/presentation/payment_screen.dart';
 import 'features/transport/presentation/driver_trips_screen.dart';
 import 'features/transport/presentation/results_screen.dart';
 import 'features/transport/presentation/search_screen.dart';
+import 'features/transport/presentation/ticket_scan_screen.dart';
 import 'features/transport/presentation/ticket_screen.dart';
 import 'features/transport/presentation/trip_detail_screen.dart';
 
@@ -177,6 +178,12 @@ final List<RouteBase> _routes = [
             GoRoute(
               path: '/hub/driver/trips',
               builder: (context, state) => const DriverTripsScreen(),
+              routes: [
+                GoRoute(
+                  path: 'scan',
+                  builder: (context, state) => const TicketScanScreen(),
+                ),
+              ],
             ),
           ],
         ),
