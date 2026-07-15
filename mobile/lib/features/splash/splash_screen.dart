@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -13,6 +14,17 @@ class SplashScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final connectivity = ref.watch(backendConnectivityProvider);
     final textTheme = Theme.of(context).textTheme;
+
+    // Side effect, not a rebuild-driven value - once the connectivity
+    // check succeeds, move on to login after a brief moment for the
+    // checkmark to actually register with the user.
+    ref.listen(backendConnectivityProvider, (previous, next) {
+      if (next.hasValue) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (context.mounted) context.go('/login');
+        });
+      }
+    });
 
     return Scaffold(
       body: SafeArea(
