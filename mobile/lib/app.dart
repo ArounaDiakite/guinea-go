@@ -9,7 +9,11 @@ import 'features/hub/presentation/profile_screen.dart';
 import 'features/identity/presentation/login_screen.dart';
 import 'features/identity/presentation/register_screen.dart';
 import 'features/splash/splash_screen.dart';
+import 'features/transport/models/booking.dart';
 import 'features/transport/models/trip_search_params.dart';
+import 'features/transport/models/trip_seat.dart';
+import 'features/transport/presentation/booking_screen.dart';
+import 'features/transport/presentation/payment_screen.dart';
 import 'features/transport/presentation/results_screen.dart';
 import 'features/transport/presentation/search_screen.dart';
 import 'features/transport/presentation/trip_detail_screen.dart';
@@ -54,6 +58,21 @@ final appRouter = GoRouter(
                   path: 'trips/:tripId',
                   builder: (context, state) =>
                       TripDetailScreen(tripId: state.pathParameters['tripId']!),
+                  routes: [
+                    GoRoute(
+                      path: 'booking',
+                      builder: (context, state) => BookingScreen(
+                        tripId: state.pathParameters['tripId']!,
+                        seat: state.extra as TripSeat,
+                      ),
+                      routes: [
+                        GoRoute(
+                          path: 'payment',
+                          builder: (context, state) => PaymentScreen(booking: state.extra as Booking),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),
