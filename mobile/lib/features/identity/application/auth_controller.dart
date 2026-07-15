@@ -12,7 +12,24 @@ import '../models/user.dart';
 /// instead of only reacting to global state.
 class AuthController extends AsyncNotifier<User?> {
   @override
-  Future<User?> build() async => null;
+  Future<User?> build() async {
+    // Session restore: a token surviving in secure storage from a
+    // previous launch (or, on web, before a page reload) should land
+    // the user straight on the hub, not back on the login screen.
+    final token = await TokenStorage.readAccessToken();
+    if (token == null) return null;
+
+    try {
+      return await ref.read(authRepositoryProvider).getMe();
+    } catch (_) {
+      // Token is stale/invalid (expired, revoked, ...) - the auth
+      // interceptor already clears it on a 401, but clear proactively
+      // here too in case this failed for another reason while a bad
+      // token is still sitting in storage.
+      await TokenStorage.clear();
+      return null;
+    }
+  }
 
   Future<void> login({required String email, required String password}) async {
     try {

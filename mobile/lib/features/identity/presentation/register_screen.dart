@@ -59,7 +59,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         password: _passwordController.text,
         city: _cityController.text.trim(),
       );
-      if (mounted) context.go('/home');
+      if (mounted) context.go('/hub/home');
     } catch (error) {
       if (mounted) setState(() => _errorMessage = extractApiErrorMessage(error));
     } finally {

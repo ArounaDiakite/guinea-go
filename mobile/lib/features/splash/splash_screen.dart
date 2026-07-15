@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/app_button.dart';
+import '../identity/application/auth_controller.dart';
 import 'splash_controller.dart';
 
 class SplashScreen extends ConsumerWidget {
@@ -16,13 +17,11 @@ class SplashScreen extends ConsumerWidget {
     final textTheme = Theme.of(context).textTheme;
 
     // Side effect, not a rebuild-driven value - once the connectivity
-    // check succeeds, move on to login after a brief moment for the
-    // checkmark to actually register with the user.
+    // check succeeds, decide where to land: straight on the hub if a
+    // still-valid session is sitting in storage, otherwise login.
     ref.listen(backendConnectivityProvider, (previous, next) {
       if (next.hasValue) {
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (context.mounted) context.go('/login');
-        });
+        _proceedPastSplash(context, ref);
       }
     });
 
@@ -55,6 +54,19 @@ class SplashScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// A brief pause so the checkmark actually registers with the user,
+/// then reads the session-restore result (authControllerProvider's
+/// build() already checked storage for a token and, if present,
+/// validated it against GET /users/me) to decide the landing screen.
+Future<void> _proceedPastSplash(BuildContext context, WidgetRef ref) async {
+  await Future.delayed(const Duration(milliseconds: 500));
+
+  final user = await ref.read(authControllerProvider.future).catchError((_) => null);
+
+  if (!context.mounted) return;
+  context.go(user != null ? '/hub/home' : '/login');
 }
 
 class _BrandMark extends StatelessWidget {

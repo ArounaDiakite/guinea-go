@@ -22,6 +22,15 @@ class AuthRepository {
     return AuthSession.fromJson(response.data!);
   }
 
+  /// GET /users/me returns the same field set as the user embedded in
+  /// TokenResponse (plus is_verified, which User.fromJson ignores) -
+  /// used to restore the session on app start from a stored token,
+  /// without the caller having to re-authenticate.
+  Future<User> getMe() async {
+    final response = await _dio.get<Map<String, dynamic>>('/users/me');
+    return User.fromJson(response.data!);
+  }
+
   /// Public passenger self-registration (POST /auth/register) -
   /// always creates a `passenger` account, active immediately. Partner
   /// roles (company_owner, hotel_owner, ...) go through a different

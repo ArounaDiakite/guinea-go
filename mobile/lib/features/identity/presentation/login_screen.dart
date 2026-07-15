@@ -47,7 +47,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-      if (mounted) context.go('/home');
+      if (mounted) context.go('/hub/home');
     } catch (error) {
       if (mounted) setState(() => _errorMessage = extractApiErrorMessage(error));
     } finally {
