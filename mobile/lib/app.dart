@@ -12,6 +12,7 @@ import 'features/splash/splash_screen.dart';
 import 'features/transport/models/trip_search_params.dart';
 import 'features/transport/presentation/results_screen.dart';
 import 'features/transport/presentation/search_screen.dart';
+import 'features/transport/presentation/trip_detail_screen.dart';
 
 // Branch order here MUST match hubDestinations in
 // features/hub/hub_destinations.dart - the shell picks its selected
@@ -48,6 +49,11 @@ final appRouter = GoRouter(
                 GoRoute(
                   path: 'results',
                   builder: (context, state) => ResultsScreen(params: state.extra as TripSearchParams),
+                ),
+                GoRoute(
+                  path: 'trips/:tripId',
+                  builder: (context, state) =>
+                      TripDetailScreen(tripId: state.pathParameters['tripId']!),
                 ),
               ],
             ),
