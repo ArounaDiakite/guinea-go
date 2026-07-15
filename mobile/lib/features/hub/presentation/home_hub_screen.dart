@@ -16,9 +16,13 @@ class HomeHubScreen extends ConsumerWidget {
     final authState = ref.watch(authControllerProvider);
     final textTheme = Theme.of(context).textTheme;
 
-    // Shortcuts link to the 5 business modules only - Accueil and
-    // Profil are already reachable from the nav shell itself.
-    final moduleDestinations = hubDestinations.where(
+    // Shortcuts link to the business modules only - Accueil and Profil
+    // are already reachable from the nav shell itself. This screen is
+    // only ever reached by the passenger role in practice (drivers
+    // land on /hub/driver/trips instead), but resolves the role-
+    // appropriate list rather than assuming it, same as HubScaffold.
+    final role = authState.value?.role;
+    final moduleDestinations = hubDestinationsForRole(role).where(
       (destination) => destination.path != '/hub/home' && destination.path != '/hub/profile',
     );
 
