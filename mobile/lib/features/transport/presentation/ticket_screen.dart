@@ -11,7 +11,7 @@ import '../../../core/widgets/app_error_banner.dart';
 import '../application/ticket_controller.dart';
 import '../models/booking_summary.dart';
 import '../models/ticket.dart';
-import '../utils/currency.dart';
+import '../../../core/utils/currency.dart';
 
 class TicketScreen extends ConsumerWidget {
   const TicketScreen({super.key, required this.summary});

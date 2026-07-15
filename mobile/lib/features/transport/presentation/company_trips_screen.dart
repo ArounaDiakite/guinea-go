@@ -12,7 +12,7 @@ import '../application/company_controller.dart';
 import '../models/managed_route.dart';
 import '../models/managed_schedule.dart';
 import '../models/trip.dart';
-import '../utils/currency.dart';
+import '../../../core/utils/currency.dart';
 
 class CompanyTripsScreen extends ConsumerStatefulWidget {
   const CompanyTripsScreen({super.key, required this.companyId});

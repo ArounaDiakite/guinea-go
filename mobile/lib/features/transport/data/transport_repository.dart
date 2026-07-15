@@ -5,9 +5,8 @@ import '../../../core/network/api_client.dart';
 import '../models/booking.dart';
 import '../models/booking_summary.dart';
 import '../models/bus.dart';
-import '../models/city.dart';
+import '../../../core/models/city.dart';
 import '../models/driver.dart';
-import '../models/payment.dart';
 import '../models/station.dart';
 import '../models/ticket.dart';
 import '../models/ticket_validation_result.dart';
@@ -235,26 +234,9 @@ class TransportRepository {
     return Booking.fromJson(response.data!);
   }
 
-  Future<Payment> payForBooking({
-    required String bookingId,
-    required PaymentProvider provider,
-    required double amount,
-  }) async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '/bookings/$bookingId/payments',
-      data: {'provider': provider.apiValue, 'amount': amount},
-    );
-    return Payment.fromJson(response.data!);
-  }
-
   Future<List<Booking>> getMyBookings() async {
     final response = await _dio.get<List<dynamic>>('/bookings/me', queryParameters: {'limit': 100});
     return response.data!.map((json) => Booking.fromJson(json as Map<String, dynamic>)).toList();
-  }
-
-  Future<Booking> getBooking(String bookingId) async {
-    final response = await _dio.get<Map<String, dynamic>>('/bookings/$bookingId');
-    return Booking.fromJson(response.data!);
   }
 
   Future<Ticket> getTicketForBooking(String bookingId) async {

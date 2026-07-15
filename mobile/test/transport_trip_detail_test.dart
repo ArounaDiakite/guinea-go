@@ -25,7 +25,7 @@ import 'package:guinea_go/core/config/app_config.dart';
 import 'package:guinea_go/core/theme/app_theme.dart';
 import 'package:guinea_go/features/transport/models/trip_seat.dart';
 import 'package:guinea_go/features/transport/presentation/trip_detail_screen.dart';
-import 'package:guinea_go/features/transport/utils/currency.dart';
+import 'package:guinea_go/core/utils/currency.dart';
 import 'package:guinea_go/features/transport/utils/seat_pricing.dart';
 
 const _tripId = '6a570f26ec6ed828b1a425d5';

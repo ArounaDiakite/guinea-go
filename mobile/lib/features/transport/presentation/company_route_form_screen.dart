@@ -11,7 +11,7 @@ import '../../../core/widgets/app_error_banner.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../application/company_controller.dart';
 import '../data/company_repository.dart';
-import '../models/currency.dart';
+import '../../../core/models/currency.dart';
 import '../models/station.dart';
 
 class CompanyRouteFormScreen extends ConsumerStatefulWidget {

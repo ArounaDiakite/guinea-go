@@ -12,8 +12,8 @@ import '../../../core/widgets/app_error_banner.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../application/company_controller.dart';
 import '../data/company_repository.dart';
-import '../models/city.dart';
-import '../models/country.dart';
+import '../../../core/models/city.dart';
+import '../../../core/models/country.dart';
 import '../models/managed_company.dart';
 
 class CompanyHomeScreen extends ConsumerWidget {

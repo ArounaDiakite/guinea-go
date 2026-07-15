@@ -34,7 +34,7 @@ import 'package:guinea_go/features/identity/application/auth_controller.dart';
 import 'package:guinea_go/features/transport/data/transport_repository.dart';
 import 'package:guinea_go/features/transport/models/trip_seat.dart';
 import 'package:guinea_go/features/transport/presentation/my_bookings_screen.dart';
-import 'package:guinea_go/features/transport/utils/currency.dart';
+import 'package:guinea_go/core/utils/currency.dart';
 import 'package:guinea_go/features/transport/utils/seat_pricing.dart';
 
 const _tripId = '6a570f26ec6ed828b1a425d6'; // today, VIP bus, untouched by the other test files

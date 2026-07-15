@@ -26,15 +26,15 @@ import 'package:guinea_go/core/config/app_config.dart';
 import 'package:guinea_go/core/network/token_storage.dart';
 import 'package:guinea_go/core/theme/app_theme.dart';
 import 'package:guinea_go/features/identity/application/auth_controller.dart';
-import 'package:guinea_go/features/transport/models/booking.dart';
+import 'package:guinea_go/features/payments/models/payment.dart';
+import 'package:guinea_go/features/payments/presentation/payment_screen.dart';
 import 'package:guinea_go/features/transport/models/booking_summary.dart';
 import 'package:guinea_go/features/transport/models/trip_seat.dart';
 import 'package:guinea_go/features/transport/presentation/booking_screen.dart';
 import 'package:guinea_go/features/transport/presentation/my_bookings_screen.dart';
-import 'package:guinea_go/features/transport/presentation/payment_screen.dart';
 import 'package:guinea_go/features/transport/presentation/ticket_screen.dart';
 import 'package:guinea_go/features/transport/presentation/trip_detail_screen.dart';
-import 'package:guinea_go/features/transport/utils/currency.dart';
+import 'package:guinea_go/core/utils/currency.dart';
 import 'package:guinea_go/features/transport/utils/seat_pricing.dart';
 
 const _tripId = '6a570f26ec6ed828b1a425d5'; // today, standard bus
@@ -80,7 +80,7 @@ Widget buildTestApp() {
             routes: [
               GoRoute(
                 path: 'payment',
-                builder: (context, state) => PaymentScreen(booking: state.extra as Booking),
+                builder: (context, state) => PaymentScreen(request: state.extra as PaymentRequest),
               ),
             ],
           ),

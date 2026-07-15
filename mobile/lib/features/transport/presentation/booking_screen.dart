@@ -8,11 +8,12 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_error_banner.dart';
+import '../../../core/utils/currency.dart';
+import '../../payments/models/payment.dart';
 import '../application/trip_detail_controller.dart';
 import '../data/transport_repository.dart';
 import '../models/trip_detail.dart';
 import '../models/trip_seat.dart';
-import '../utils/currency.dart';
 import '../utils/seat_pricing.dart';
 
 class BookingScreen extends ConsumerStatefulWidget {
@@ -40,7 +41,15 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           .read(transportRepositoryProvider)
           .createBooking(tripId: widget.tripId, seatId: widget.seat.seatId);
       if (mounted) {
-        context.push('/hub/transport/trips/${widget.tripId}/booking/payment', extra: booking);
+        context.push(
+          '/hub/transport/trips/${widget.tripId}/booking/payment',
+          extra: PaymentRequest(
+            bookingId: booking.id,
+            pricePaid: booking.pricePaid,
+            bookingType: PaymentBookingType.transport,
+            confirmedRoute: '/hub/transport/bookings',
+          ),
+        );
       }
     } catch (error) {
       if (mounted) setState(() => _errorMessage = extractApiErrorMessage(error));

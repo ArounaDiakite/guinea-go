@@ -8,7 +8,7 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_error_banner.dart';
 import '../application/trip_search_controller.dart';
-import '../models/city.dart';
+import '../../../core/models/city.dart';
 import '../models/trip_search_params.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {

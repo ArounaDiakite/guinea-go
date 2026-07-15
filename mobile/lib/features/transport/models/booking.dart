@@ -1,19 +1,6 @@
-enum BookingStatus { pendingPayment, confirmed, cancelled, expired, unknown }
+import '../../../core/models/booking_status.dart';
 
-BookingStatus parseBookingStatus(String raw) {
-  switch (raw) {
-    case 'PENDING_PAYMENT':
-      return BookingStatus.pendingPayment;
-    case 'CONFIRMED':
-      return BookingStatus.confirmed;
-    case 'CANCELLED':
-      return BookingStatus.cancelled;
-    case 'EXPIRED':
-      return BookingStatus.expired;
-    default:
-      return BookingStatus.unknown;
-  }
-}
+export '../../../core/models/booking_status.dart';
 
 class Booking {
   const Booking({

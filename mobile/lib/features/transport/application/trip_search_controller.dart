@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/transport_repository.dart';
-import '../models/city.dart';
+import '../../../core/models/city.dart';
 import '../models/trip.dart';
 import '../models/trip_search_params.dart';
 

@@ -12,7 +12,7 @@ import '../application/my_bookings_controller.dart';
 import '../data/transport_repository.dart';
 import '../models/booking.dart';
 import '../models/booking_summary.dart';
-import '../utils/currency.dart';
+import '../../../core/utils/currency.dart';
 
 class MyBookingsScreen extends ConsumerStatefulWidget {
   const MyBookingsScreen({super.key});

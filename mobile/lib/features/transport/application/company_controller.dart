@@ -2,9 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../identity/application/auth_controller.dart';
 import '../data/company_repository.dart';
-import '../models/city.dart';
-import '../models/country.dart';
-import '../models/currency.dart';
+import '../../../core/models/city.dart';
+import '../../../core/models/country.dart';
+import '../../../core/models/currency.dart';
 import '../models/managed_bus.dart';
 import '../models/managed_company.dart';
 import '../models/managed_driver.dart';

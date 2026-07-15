@@ -10,8 +10,9 @@ import 'features/hub/presentation/profile_screen.dart';
 import 'features/identity/application/auth_controller.dart';
 import 'features/identity/presentation/login_screen.dart';
 import 'features/identity/presentation/register_screen.dart';
+import 'features/payments/models/payment.dart';
+import 'features/payments/presentation/payment_screen.dart';
 import 'features/splash/splash_screen.dart';
-import 'features/transport/models/booking.dart';
 import 'features/transport/models/booking_summary.dart';
 import 'features/transport/models/trip_search_params.dart';
 import 'features/transport/models/trip_seat.dart';
@@ -27,7 +28,6 @@ import 'features/transport/presentation/company_schedule_form_screen.dart';
 import 'features/transport/presentation/company_trip_form_screen.dart';
 import 'features/transport/presentation/company_trips_screen.dart';
 import 'features/transport/presentation/my_bookings_screen.dart';
-import 'features/transport/presentation/payment_screen.dart';
 import 'features/transport/presentation/driver_trips_screen.dart';
 import 'features/transport/presentation/results_screen.dart';
 import 'features/transport/presentation/search_screen.dart';
@@ -121,7 +121,7 @@ final List<RouteBase> _routes = [
                       routes: [
                         GoRoute(
                           path: 'payment',
-                          builder: (context, state) => PaymentScreen(booking: state.extra as Booking),
+                          builder: (context, state) => PaymentScreen(request: state.extra as PaymentRequest),
                         ),
                       ],
                     ),

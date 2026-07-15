@@ -12,7 +12,7 @@ import '../application/trip_detail_controller.dart';
 import '../models/trip.dart';
 import '../models/trip_detail.dart';
 import '../models/trip_seat.dart';
-import '../utils/currency.dart';
+import '../../../core/utils/currency.dart';
 import '../utils/seat_pricing.dart';
 import 'seat_map.dart';
 

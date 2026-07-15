@@ -11,7 +11,7 @@ import '../../../core/network/api_error.dart';
 import '../application/trip_search_controller.dart';
 import '../models/trip.dart';
 import '../models/trip_search_params.dart';
-import '../utils/currency.dart';
+import '../../../core/utils/currency.dart';
 
 enum _SortOrder { departureTime, price }
 

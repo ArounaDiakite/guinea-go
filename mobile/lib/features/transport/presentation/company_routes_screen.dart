@@ -11,7 +11,7 @@ import '../../../core/widgets/app_error_banner.dart';
 import '../application/company_controller.dart';
 import '../models/managed_route.dart';
 import '../models/station.dart';
-import '../utils/currency.dart';
+import '../../../core/utils/currency.dart';
 
 class CompanyRoutesScreen extends ConsumerWidget {
   const CompanyRoutesScreen({super.key, required this.companyId});

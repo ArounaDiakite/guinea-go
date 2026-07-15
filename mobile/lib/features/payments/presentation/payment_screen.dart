@@ -4,23 +4,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/models/booking_status.dart';
 import '../../../core/network/api_error.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/currency.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_error_banner.dart';
-import '../data/transport_repository.dart';
-import '../models/booking.dart';
+import '../data/payment_repository.dart';
 import '../models/payment.dart';
-import '../utils/currency.dart';
 
 enum _PaymentPhase { choosingProvider, submitting, waitingConfirmation, confirmed, failed }
 
+/// The sandbox payment flow, shared by every booking domain (transport,
+/// hotels, ...) - see PaymentRequest for what varies per domain.
 class PaymentScreen extends ConsumerStatefulWidget {
-  const PaymentScreen({super.key, required this.booking});
+  const PaymentScreen({super.key, required this.request});
 
-  final Booking booking;
+  final PaymentRequest request;
 
   @override
   ConsumerState<PaymentScreen> createState() => _PaymentScreenState();
@@ -30,7 +32,6 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   PaymentProvider _selectedProvider = PaymentProvider.orangeMoney;
   _PaymentPhase _phase = _PaymentPhase.choosingProvider;
   String? _errorMessage;
-  late Booking _booking;
 
   // The sandbox payment endpoint returns immediately with status
   // "pending" - the backend confirms it via a background task after its
@@ -39,12 +40,6 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   // normal scheduling jitter without turning this into a poll loop.
   static const _confirmationWait = Duration(seconds: 4);
 
-  @override
-  void initState() {
-    super.initState();
-    _booking = widget.booking;
-  }
-
   Future<void> _pay() async {
     setState(() {
       _phase = _PaymentPhase.submitting;
@@ -52,9 +47,12 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     });
 
     try {
-      await ref
-          .read(transportRepositoryProvider)
-          .payForBooking(bookingId: _booking.id, provider: _selectedProvider, amount: _booking.pricePaid);
+      await ref.read(paymentRepositoryProvider).payForBooking(
+        bookingType: widget.request.bookingType,
+        bookingId: widget.request.bookingId,
+        provider: _selectedProvider,
+        amount: widget.request.pricePaid,
+      );
       if (mounted) setState(() => _phase = _PaymentPhase.waitingConfirmation);
       await _awaitConfirmation();
     } catch (error) {
@@ -72,19 +70,17 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     if (!mounted) return;
 
     try {
-      final booking = await ref.read(transportRepositoryProvider).getBooking(_booking.id);
+      final status = await ref.read(paymentRepositoryProvider).getBookingStatus(
+        bookingType: widget.request.bookingType,
+        bookingId: widget.request.bookingId,
+      );
 
-      if (booking.status == BookingStatus.confirmed) {
-        if (mounted) {
-          setState(() {
-            _booking = booking;
-            _phase = _PaymentPhase.confirmed;
-          });
-        }
+      if (status == BookingStatus.confirmed) {
+        if (mounted) setState(() => _phase = _PaymentPhase.confirmed);
         return;
       }
 
-      if (booking.status == BookingStatus.cancelled || booking.status == BookingStatus.expired) {
+      if (status == BookingStatus.cancelled || status == BookingStatus.expired) {
         if (mounted) {
           setState(() {
             _phase = _PaymentPhase.failed;
@@ -118,7 +114,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       body: SafeArea(
         child: switch (_phase) {
           _PaymentPhase.choosingProvider || _PaymentPhase.submitting => _ProviderSelection(
-            booking: _booking,
+            pricePaid: widget.request.pricePaid,
             selectedProvider: _selectedProvider,
             isSubmitting: _phase == _PaymentPhase.submitting,
             errorMessage: _errorMessage,
@@ -126,7 +122,10 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             onPay: _pay,
           ),
           _PaymentPhase.waitingConfirmation => const _WaitingConfirmation(),
-          _PaymentPhase.confirmed => _Confirmed(booking: _booking),
+          _PaymentPhase.confirmed => _Confirmed(
+            pricePaid: widget.request.pricePaid,
+            confirmedRoute: widget.request.confirmedRoute,
+          ),
           _PaymentPhase.failed => _Failed(
             message: _errorMessage ?? 'Une erreur est survenue.',
             onRetry: () => setState(() => _phase = _PaymentPhase.choosingProvider),
@@ -139,7 +138,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
 
 class _ProviderSelection extends StatelessWidget {
   const _ProviderSelection({
-    required this.booking,
+    required this.pricePaid,
     required this.selectedProvider,
     required this.isSubmitting,
     required this.errorMessage,
@@ -147,7 +146,7 @@ class _ProviderSelection extends StatelessWidget {
     required this.onPay,
   });
 
-  final Booking booking;
+  final double pricePaid;
   final PaymentProvider selectedProvider;
   final bool isSubmitting;
   final String? errorMessage;
@@ -186,7 +185,7 @@ class _ProviderSelection extends StatelessWidget {
               const SizedBox(height: AppSpacing.lg),
               Text('Montant à payer', style: textTheme.labelMedium),
               const SizedBox(height: AppSpacing.xs),
-              Text(formatGnf(booking.pricePaid), style: textTheme.displayLarge),
+              Text(formatGnf(pricePaid), style: textTheme.displayLarge),
               const SizedBox(height: AppSpacing.xl),
               Text('Moyen de paiement', style: textTheme.titleSmall),
               const SizedBox(height: AppSpacing.sm),
@@ -277,9 +276,10 @@ class _WaitingConfirmation extends StatelessWidget {
 }
 
 class _Confirmed extends StatelessWidget {
-  const _Confirmed({required this.booking});
+  const _Confirmed({required this.pricePaid, required this.confirmedRoute});
 
-  final Booking booking;
+  final double pricePaid;
+  final String confirmedRoute;
 
   @override
   Widget build(BuildContext context) {
@@ -296,13 +296,13 @@ class _Confirmed extends StatelessWidget {
             Text('Réservation confirmée !', style: textTheme.headlineMedium, textAlign: TextAlign.center),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              formatGnf(booking.pricePaid),
+              formatGnf(pricePaid),
               style: textTheme.titleLarge?.copyWith(color: AppColors.primary),
             ),
             const SizedBox(height: AppSpacing.xl),
             AppButton(
               label: 'Voir mes réservations',
-              onPressed: () => context.go('/hub/transport/bookings'),
+              onPressed: () => context.go(confirmedRoute),
             ),
             const SizedBox(height: AppSpacing.md),
             AppButton(
