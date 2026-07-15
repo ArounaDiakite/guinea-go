@@ -10,6 +10,7 @@ from app.modules.transport.routes.router import router as routes_router
 from app.modules.transport.schedules.router import router as schedules_router
 from app.modules.transport.trips.router import router as trips_router
 from app.modules.transport.bookings.router import router as bookings_router
+from app.modules.transport.tickets.router import router as tickets_router
 from app.payments.router import router as payments_router
 from app.payments.router import hotel_router as hotel_payments_router
 from app.payments.router import event_router as event_payments_router
@@ -84,6 +85,7 @@ app.include_router(routes_router)
 app.include_router(schedules_router)
 app.include_router(trips_router)
 app.include_router(bookings_router)
+app.include_router(tickets_router)
 app.include_router(payments_router)
 app.include_router(hotels_router)
 app.include_router(rooms_router)

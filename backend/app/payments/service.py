@@ -12,6 +12,7 @@ from app.modules.education.students.repository import StudentRepository
 from app.modules.events.bookings.repository import EventBookingRepository
 from app.modules.hotels.reservations.repository import HotelBookingRepository
 from app.modules.transport.bookings.repository import BookingRepository
+from app.modules.transport.tickets.service import TicketService
 from app.notifications.service import NotificationService
 from app.payments.repository import PaymentRepository
 from app.payments.schemas import PaymentCreate, SchoolFeePaymentCreate
@@ -69,6 +70,7 @@ class PaymentService:
         self.student_repository = StudentRepository()
         self.institution_repository = InstitutionRepository()
         self.notification_service = NotificationService()
+        self.ticket_service = TicketService()
 
     def _booking_repository(self, booking_type: str):
         return self.booking_repositories[booking_type]
@@ -156,6 +158,10 @@ class PaymentService:
             )
 
             booking = await booking_repository.get_by_id(payment["booking_id"])
+
+            if booking_type == "transport":
+                await self.ticket_service.issue_for_booking(booking)
+
             owner_field = _OWNER_FIELD_BY_TYPE.get(booking_type, "passenger_id")
 
             await self.notification_service.send(

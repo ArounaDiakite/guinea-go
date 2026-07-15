@@ -23,6 +23,9 @@ class DriverRepository:
             session=session,
         )
 
+    async def get_by_user_id(self, user_id: str):
+        return await self.collection.find_one({"user_id": user_id, "is_deleted": False})
+
     async def get_all(
         self,
         page: int = 1,

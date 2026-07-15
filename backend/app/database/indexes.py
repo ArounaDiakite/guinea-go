@@ -151,6 +151,13 @@ async def create_indexes():
         [("student_id", 1), ("fee_schedule_id", 1)], unique=True
     )
 
+    # Tickets - one per booking, enforced at the database level (backs
+    # TicketService.issue_for_booking's idempotent create against a
+    # genuine double-issue race). code is the QR/lookup key scanned at
+    # validation time, so it needs to be globally unique too.
+    await db.tickets.create_index("booking_id", unique=True)
+    await db.tickets.create_index("code", unique=True)
+
     # Payments - booking_id is what every lookup in this collection
     # filters on (get_by_booking/get_pending_by_booking/
     # get_all_by_booking), across all five booking_type values.
