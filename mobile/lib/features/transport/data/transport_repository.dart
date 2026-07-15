@@ -156,7 +156,21 @@ class TransportRepository {
         },
       );
 
-      final company = await _companyById(route.companyId);
+      if (tripsResponse.data!.isEmpty) continue;
+
+      // A route outlives the company that created it - deleting a
+      // company (DELETE /companies/{id}) doesn't cascade to its
+      // routes/trips. A stale route pointing at a since-deleted
+      // company 404s here; skip just this route rather than failing
+      // the whole search over one company's cleanup.
+      final TransportCompany company;
+      try {
+        company = await _companyById(route.companyId);
+      } on DioException catch (error) {
+        if (error.response?.statusCode == 404) continue;
+        rethrow;
+      }
+
       final originCity = _cityById(originCityId);
       final destinationCity = _cityById(destinationCityId);
 

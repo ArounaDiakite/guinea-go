@@ -23,6 +23,9 @@ import 'features/transport/presentation/company_drivers_screen.dart';
 import 'features/transport/presentation/company_home_screen.dart';
 import 'features/transport/presentation/company_route_form_screen.dart';
 import 'features/transport/presentation/company_routes_screen.dart';
+import 'features/transport/presentation/company_schedule_form_screen.dart';
+import 'features/transport/presentation/company_trip_form_screen.dart';
+import 'features/transport/presentation/company_trips_screen.dart';
 import 'features/transport/presentation/my_bookings_screen.dart';
 import 'features/transport/presentation/payment_screen.dart';
 import 'features/transport/presentation/driver_trips_screen.dart';
@@ -233,6 +236,20 @@ final List<RouteBase> _routes = [
                     GoRoute(
                       path: 'new',
                       builder: (context, state) => CompanyRouteFormScreen(companyId: state.extra as String),
+                    ),
+                  ],
+                ),
+                GoRoute(
+                  path: 'trips',
+                  builder: (context, state) => CompanyTripsScreen(companyId: state.extra as String),
+                  routes: [
+                    GoRoute(
+                      path: 'new-schedule',
+                      builder: (context, state) => CompanyScheduleFormScreen(companyId: state.extra as String),
+                    ),
+                    GoRoute(
+                      path: 'new-trip',
+                      builder: (context, state) => CompanyTripFormScreen(companyId: state.extra as String),
                     ),
                   ],
                 ),
