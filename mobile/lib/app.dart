@@ -9,6 +9,9 @@ import 'features/hub/presentation/profile_screen.dart';
 import 'features/identity/presentation/login_screen.dart';
 import 'features/identity/presentation/register_screen.dart';
 import 'features/splash/splash_screen.dart';
+import 'features/transport/models/trip_search_params.dart';
+import 'features/transport/presentation/results_screen.dart';
+import 'features/transport/presentation/search_screen.dart';
 
 // Branch order here MUST match hubDestinations in
 // features/hub/hub_destinations.dart - the shell picks its selected
@@ -40,10 +43,13 @@ final appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/hub/transport',
-              builder: (context, state) => const ModulePlaceholderScreen(
-                title: 'Transport',
-                icon: Icons.directions_bus_rounded,
-              ),
+              builder: (context, state) => const SearchScreen(),
+              routes: [
+                GoRoute(
+                  path: 'results',
+                  builder: (context, state) => ResultsScreen(params: state.extra as TripSearchParams),
+                ),
+              ],
             ),
           ],
         ),
