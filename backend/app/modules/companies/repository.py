@@ -19,6 +19,7 @@ class CompanyRepository:
         search: str | None = None,
         company_type: str | None = None,
         city_id: str | None = None,
+        owner_id: str | None = None,
     ):
         query = {"is_deleted": False}
 
@@ -30,6 +31,9 @@ class CompanyRepository:
 
         if city_id:
             query["city_id"] = city_id
+
+        if owner_id:
+            query["owner_id"] = owner_id
 
         skip = (page - 1) * limit
 

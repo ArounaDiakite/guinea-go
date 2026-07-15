@@ -42,6 +42,7 @@ class CompanyService:
         search: str | None,
         company_type: str | None,
         city_id: str | None,
+        owner_id: str | None = None,
     ):
         companies = await self.repository.get_all(
             page,
@@ -49,6 +50,7 @@ class CompanyService:
             search,
             company_type,
             city_id,
+            owner_id,
         )
 
         return [self._format(company) for company in companies]
