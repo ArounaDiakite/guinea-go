@@ -18,6 +18,8 @@ import 'features/transport/models/trip_seat.dart';
 import 'features/transport/presentation/booking_screen.dart';
 import 'features/transport/presentation/company_bus_form_screen.dart';
 import 'features/transport/presentation/company_buses_screen.dart';
+import 'features/transport/presentation/company_driver_form_screen.dart';
+import 'features/transport/presentation/company_drivers_screen.dart';
 import 'features/transport/presentation/company_home_screen.dart';
 import 'features/transport/presentation/my_bookings_screen.dart';
 import 'features/transport/presentation/payment_screen.dart';
@@ -209,6 +211,16 @@ final List<RouteBase> _routes = [
                     GoRoute(
                       path: 'new',
                       builder: (context, state) => CompanyBusFormScreen(companyId: state.extra as String),
+                    ),
+                  ],
+                ),
+                GoRoute(
+                  path: 'drivers',
+                  builder: (context, state) => CompanyDriversScreen(companyId: state.extra as String),
+                  routes: [
+                    GoRoute(
+                      path: 'new',
+                      builder: (context, state) => CompanyDriverFormScreen(companyId: state.extra as String),
                     ),
                   ],
                 ),
