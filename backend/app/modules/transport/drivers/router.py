@@ -33,6 +33,11 @@ async def get_drivers(
     return await service.get_drivers(page, limit, search, company_id, status)
 
 
+@router.get("/me", response_model=DriverResponse)
+async def get_my_driver_profile(current_user=Depends(get_current_user)):
+    return await service.get_my_driver_profile(current_user["sub"])
+
+
 @router.get("/{driver_id}", response_model=DriverResponse)
 async def get_driver(driver_id: str):
     return await service.get_driver(driver_id)

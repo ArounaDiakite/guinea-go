@@ -7,9 +7,11 @@ from pymongo.errors import DuplicateKeyError
 from app.common.base_model import BaseDocument
 from app.core.constants import UserRole
 from app.core.utils import utc_now
+from app.identity.users.repository import UserRepository
 from app.modules.companies.repository import CompanyRepository
 from app.modules.transport.bookings.repository import BookingRepository
 from app.modules.transport.drivers.repository import DriverRepository
+from app.modules.transport.seats.repository import SeatRepository
 from app.modules.transport.tickets.repository import TicketRepository
 from app.modules.transport.trips.repository import TripRepository
 
@@ -30,6 +32,8 @@ class TicketService:
         self.trip_repository = TripRepository()
         self.driver_repository = DriverRepository()
         self.company_repository = CompanyRepository()
+        self.user_repository = UserRepository()
+        self.seat_repository = SeatRepository()
 
     async def issue_for_booking(self, booking: dict):
         """Called once a booking transitions to CONFIRMED (see
@@ -125,7 +129,15 @@ class TicketService:
         if not validated:
             raise HTTPException(status_code=400, detail="This ticket has already been used.")
 
-        return self._format(await self.repository.get_by_id(str(ticket["_id"])))
+        validated_ticket = await self.repository.get_by_id(str(ticket["_id"]))
+        passenger = await self.user_repository.get_by_id(validated_ticket["passenger_id"])
+        seat = await self.seat_repository.get_by_id(validated_ticket["seat_id"])
+
+        return {
+            **self._format(validated_ticket),
+            "passenger_name": f"{passenger['first_name']} {passenger['last_name']}" if passenger else "?",
+            "seat_number": seat["seat_number"] if seat else "?",
+        }
 
     async def _ensure_can_validate(self, trip: dict, user_id: str, role: str):
         """A driver or company_owner may only validate tickets for

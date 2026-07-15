@@ -163,6 +163,7 @@ class TripService:
         route_id: str | None,
         travel_date,
         status: str | None,
+        driver_id: str | None = None,
     ):
         converted_travel_date = None
 
@@ -177,6 +178,7 @@ class TripService:
             limit=limit,
             company_id=company_id,
             route_id=route_id,
+            driver_id=driver_id,
             travel_date=converted_travel_date,
             status=status,
         )

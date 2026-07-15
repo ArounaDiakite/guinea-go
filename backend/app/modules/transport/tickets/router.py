@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 
 from app.core.constants import UserRole
 from app.core.dependencies import get_current_user, require_role
-from app.modules.transport.tickets.schemas import TicketResponse
+from app.modules.transport.tickets.schemas import TicketResponse, TicketValidationResponse
 from app.modules.transport.tickets.service import TicketService
 
 # No shared prefix - this router covers two different existing
@@ -21,7 +21,7 @@ async def get_ticket_for_booking(
     return await service.get_ticket_for_booking(booking_id, current_user["sub"])
 
 
-@router.post("/tickets/{code}/validate", response_model=TicketResponse)
+@router.post("/tickets/{code}/validate", response_model=TicketValidationResponse)
 async def validate_ticket(
     code: str,
     current_user=Depends(require_role(UserRole.DRIVER, UserRole.COMPANY_OWNER)),

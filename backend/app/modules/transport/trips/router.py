@@ -38,6 +38,7 @@ async def get_trips(
     limit: int = Query(10, ge=1, le=100),
     company_id: Optional[str] = None,
     route_id: Optional[str] = None,
+    driver_id: Optional[str] = None,
     travel_date: Optional[date] = None,
     status: Optional[str] = None,
 ):
@@ -46,6 +47,7 @@ async def get_trips(
         limit=limit,
         company_id=company_id,
         route_id=route_id,
+        driver_id=driver_id,
         travel_date=travel_date,
         status=status,
     )

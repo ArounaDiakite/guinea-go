@@ -173,6 +173,17 @@ class DriverService:
 
         return self._format(driver)
 
+    async def get_my_driver_profile(self, user_id: str):
+        driver = await self.repository.get_by_user_id(user_id)
+
+        if not driver:
+            raise HTTPException(
+                status_code=404,
+                detail="No driver profile is linked to this account.",
+            )
+
+        return self._format(driver)
+
     async def update_driver(self, driver_id: str, data: DriverCreate, user_id: str):
         driver = await self.repository.get_by_id(driver_id)
 

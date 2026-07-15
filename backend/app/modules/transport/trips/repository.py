@@ -28,6 +28,7 @@ class TripRepository:
         limit: int = 10,
         company_id: str | None = None,
         route_id: str | None = None,
+        driver_id: str | None = None,
         travel_date=None,
         status: str | None = None,
     ):
@@ -40,6 +41,9 @@ class TripRepository:
 
         if route_id:
             query["route_id"] = route_id
+
+        if driver_id:
+            query["driver_id"] = driver_id
 
         if travel_date:
             query["travel_date"] = travel_date
