@@ -155,3 +155,15 @@ async def create_indexes():
     # filters on (get_by_booking/get_pending_by_booking/
     # get_all_by_booking), across all five booking_type values.
     await db.payments.create_index("booking_id")
+
+    # Reviews - the unique (author_id, target_type, target_id) triple
+    # backs create_review's pre-checked insert against a genuine
+    # double-submit race (same shape as attendance_records/
+    # student_fees) and doubles as get_by_author_and_target()'s lookup.
+    # target_id doesn't share a prefix with that one (author_id leads),
+    # so get_by_target()'s (target_type, target_id) list query needs
+    # its own index.
+    await db.reviews.create_index(
+        [("author_id", 1), ("target_type", 1), ("target_id", 1)], unique=True
+    )
+    await db.reviews.create_index([("target_type", 1), ("target_id", 1)])

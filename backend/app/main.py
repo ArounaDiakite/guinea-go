@@ -30,6 +30,7 @@ from app.modules.education.students.router import router as edu_students_router
 from app.modules.education.subjects.router import router as subjects_router
 from app.modules.education.timeslots.router import router as timeslots_router
 from app.modules.education.fees.router import router as fee_schedules_router
+from app.reviews.router import router as reviews_router
 from app.identity.auth.router import router as auth_router
 from app.shared.cities.router import router as cities_router
 from app.modules.companies.router import router as companies_router
@@ -90,6 +91,7 @@ app.include_router(subjects_router)
 app.include_router(timeslots_router)
 app.include_router(fee_schedules_router)
 app.include_router(school_fee_payments_router)
+app.include_router(reviews_router)
 
 
 @app.get("/", tags=["Root"])
