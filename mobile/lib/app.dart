@@ -3,6 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_theme.dart';
+import 'features/hotels/models/hotel_booking_selection.dart';
+import 'features/hotels/models/hotel_search_params.dart';
+import 'features/hotels/models/hotel_stay.dart';
+import 'features/hotels/presentation/hotel_booking_screen.dart';
+import 'features/hotels/presentation/hotel_bookings_received_screen.dart';
+import 'features/hotels/presentation/hotel_detail_screen.dart';
+import 'features/hotels/presentation/hotel_home_screen.dart';
+import 'features/hotels/presentation/hotel_results_screen.dart';
+import 'features/hotels/presentation/hotel_room_form_screen.dart';
+import 'features/hotels/presentation/hotel_rooms_screen.dart';
+import 'features/hotels/presentation/hotel_search_screen.dart';
+import 'features/hotels/presentation/my_hotel_bookings_screen.dart';
 import 'features/hub/presentation/home_hub_screen.dart';
 import 'features/hub/presentation/hub_scaffold.dart';
 import 'features/hub/presentation/module_placeholder_screen.dart';
@@ -135,10 +147,37 @@ final List<RouteBase> _routes = [
           routes: [
             GoRoute(
               path: '/hub/hotels',
-              builder: (context, state) => const ModulePlaceholderScreen(
-                title: 'Hôtels',
-                icon: Icons.hotel_rounded,
-              ),
+              builder: (context, state) => const HotelSearchScreen(),
+              routes: [
+                GoRoute(
+                  path: 'results',
+                  builder: (context, state) => HotelResultsScreen(params: state.extra as HotelSearchParams),
+                ),
+                GoRoute(
+                  path: 'bookings',
+                  builder: (context, state) => const MyHotelBookingsScreen(),
+                ),
+                GoRoute(
+                  path: ':hotelId',
+                  builder: (context, state) => HotelDetailScreen(
+                    hotelId: state.pathParameters['hotelId']!,
+                    stay: state.extra as HotelStay,
+                  ),
+                  routes: [
+                    GoRoute(
+                      path: 'booking',
+                      builder: (context, state) =>
+                          HotelBookingScreen(selection: state.extra as HotelBookingSelection),
+                      routes: [
+                        GoRoute(
+                          path: 'payment',
+                          builder: (context, state) => PaymentScreen(request: state.extra as PaymentRequest),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
             ),
           ],
         ),
@@ -252,6 +291,32 @@ final List<RouteBase> _routes = [
                       builder: (context, state) => CompanyTripFormScreen(companyId: state.extra as String),
                     ),
                   ],
+                ),
+              ],
+            ),
+          ],
+        ),
+        // branchIndex 9 in hub_destinations.dart - hotel_owner-only.
+        // Same extra-carries-the-id pattern as /hub/company above.
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/hub/hotel',
+              builder: (context, state) => const HotelHomeScreen(),
+              routes: [
+                GoRoute(
+                  path: 'rooms',
+                  builder: (context, state) => HotelRoomsScreen(hotelId: state.extra as String),
+                  routes: [
+                    GoRoute(
+                      path: 'new',
+                      builder: (context, state) => HotelRoomFormScreen(hotelId: state.extra as String),
+                    ),
+                  ],
+                ),
+                GoRoute(
+                  path: 'bookings',
+                  builder: (context, state) => HotelBookingsReceivedScreen(hotelId: state.extra as String),
                 ),
               ],
             ),
