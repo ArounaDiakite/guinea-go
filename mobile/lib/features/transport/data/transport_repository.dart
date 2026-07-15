@@ -9,6 +9,7 @@ import '../models/city.dart';
 import '../models/driver.dart';
 import '../models/payment.dart';
 import '../models/station.dart';
+import '../models/ticket.dart';
 import '../models/transport_company.dart';
 import '../models/transport_route.dart';
 import '../models/trip.dart';
@@ -239,6 +240,11 @@ class TransportRepository {
   Future<Booking> getBooking(String bookingId) async {
     final response = await _dio.get<Map<String, dynamic>>('/bookings/$bookingId');
     return Booking.fromJson(response.data!);
+  }
+
+  Future<Ticket> getTicketForBooking(String bookingId) async {
+    final response = await _dio.get<Map<String, dynamic>>('/bookings/$bookingId/ticket');
+    return Ticket.fromJson(response.data!);
   }
 
   Future<Booking> cancelBooking(String bookingId) async {

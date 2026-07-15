@@ -12,6 +12,7 @@ import 'features/identity/presentation/login_screen.dart';
 import 'features/identity/presentation/register_screen.dart';
 import 'features/splash/splash_screen.dart';
 import 'features/transport/models/booking.dart';
+import 'features/transport/models/booking_summary.dart';
 import 'features/transport/models/trip_search_params.dart';
 import 'features/transport/models/trip_seat.dart';
 import 'features/transport/presentation/booking_screen.dart';
@@ -19,6 +20,7 @@ import 'features/transport/presentation/my_bookings_screen.dart';
 import 'features/transport/presentation/payment_screen.dart';
 import 'features/transport/presentation/results_screen.dart';
 import 'features/transport/presentation/search_screen.dart';
+import 'features/transport/presentation/ticket_screen.dart';
 import 'features/transport/presentation/trip_detail_screen.dart';
 
 /// Overridable in tests to land the router somewhere other than the
@@ -84,6 +86,12 @@ final List<RouteBase> _routes = [
                 GoRoute(
                   path: 'bookings',
                   builder: (context, state) => const MyBookingsScreen(),
+                  routes: [
+                    GoRoute(
+                      path: 'ticket',
+                      builder: (context, state) => TicketScreen(summary: state.extra as BookingSummary),
+                    ),
+                  ],
                 ),
                 GoRoute(
                   path: 'trips/:tripId',
