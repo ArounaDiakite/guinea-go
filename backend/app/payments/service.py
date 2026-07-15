@@ -12,6 +12,7 @@ from app.modules.education.students.repository import StudentRepository
 from app.modules.events.bookings.repository import EventBookingRepository
 from app.modules.hotels.reservations.repository import HotelBookingRepository
 from app.modules.transport.bookings.repository import BookingRepository
+from app.notifications.service import NotificationService
 from app.payments.repository import PaymentRepository
 from app.payments.schemas import PaymentCreate, SchoolFeePaymentCreate
 
@@ -67,6 +68,7 @@ class PaymentService:
         self.student_fee_repository = StudentFeeRepository()
         self.student_repository = StudentRepository()
         self.institution_repository = InstitutionRepository()
+        self.notification_service = NotificationService()
 
     def _booking_repository(self, booking_type: str):
         return self.booking_repositories[booking_type]
@@ -139,7 +141,8 @@ class PaymentService:
         if not payment or payment["status"] != "pending":
             return
 
-        booking_repository = self._booking_repository(payment.get("booking_type", "transport"))
+        booking_type = payment.get("booking_type", "transport")
+        booking_repository = self._booking_repository(booking_type)
 
         booking_confirmed = await booking_repository.transition_status_if(
             payment["booking_id"],
@@ -150,6 +153,20 @@ class PaymentService:
         if booking_confirmed:
             await self.repository.update_status(
                 payment_id, {"status": "completed", **BaseDocument.update()}
+            )
+
+            booking = await booking_repository.get_by_id(payment["booking_id"])
+            owner_field = _OWNER_FIELD_BY_TYPE.get(booking_type, "passenger_id")
+
+            await self.notification_service.send(
+                booking[owner_field],
+                "booking_confirmed",
+                {
+                    "booking_type": booking_type,
+                    "booking_id": payment["booking_id"],
+                    "amount": payment["amount"],
+                    "currency": payment.get("currency", "GNF"),
+                },
             )
         else:
             await self.repository.update_status(
@@ -243,6 +260,32 @@ class PaymentService:
             await self.repository.update_status(
                 payment_id, {"status": "completed", **BaseDocument.update()}
             )
+
+            # Notifies the school_administrator, not the student - same
+            # reasoning as the rest of the fees feature: students have no
+            # account in this system, the administrator is who submitted
+            # the payment on their behalf.
+            student = await self.student_repository.get_by_id(updated_fee["student_id"])
+
+            if student:
+                institution = await self.institution_repository.get_by_id(
+                    student["institution_id"]
+                )
+
+                if institution:
+                    await self.notification_service.send(
+                        institution["administrator_id"],
+                        "fee_payment_received",
+                        {
+                            "amount": payment["amount"],
+                            "currency": payment.get("currency", "GNF"),
+                            "student_name": f"{student['first_name']} {student['last_name']}",
+                            "remaining": round(
+                                updated_fee["amount_due"] - updated_fee["amount_paid"], 2
+                            ),
+                            "status": updated_fee["status"],
+                        },
+                    )
         else:
             await self.repository.update_status(
                 payment_id, {"status": "failed", **BaseDocument.update()}

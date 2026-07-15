@@ -1,11 +1,13 @@
 from fastapi import HTTPException, status
 
 from app.admin.repository import AdminRepository
+from app.notifications.service import NotificationService
 
 
 class AdminService:
     def __init__(self):
         self.repository = AdminRepository()
+        self.notification_service = NotificationService()
 
     async def get_pending_users(self):
         users = await self.repository.get_pending_partner_users()
@@ -27,6 +29,10 @@ class AdminService:
             )
 
         user = await self.repository.activate_user(user_id)
+
+        await self.notification_service.send(
+            str(user["_id"]), "account_activated", {"role": user["role"]}
+        )
 
         return self._format(user)
 

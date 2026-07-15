@@ -167,3 +167,8 @@ async def create_indexes():
         [("author_id", 1), ("target_type", 1), ("target_id", 1)], unique=True
     )
     await db.reviews.create_index([("target_type", 1), ("target_id", 1)])
+
+    # Notifications - matches get_by_user()'s query shape exactly
+    # (filter by user_id, sorted by created_at descending for "most
+    # recent first").
+    await db.notifications.create_index([("user_id", 1), ("created_at", -1)])

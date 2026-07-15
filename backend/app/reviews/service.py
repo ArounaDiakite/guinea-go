@@ -1,9 +1,11 @@
+from bson import ObjectId
 from fastapi import HTTPException
 from pymongo.errors import DuplicateKeyError
 
 from app.common.base_model import BaseDocument
 from app.core.permissions import ensure_owner
 from app.database.mongodb import db
+from app.notifications.service import NotificationService
 from app.reviews.repository import ReviewRepository
 from app.reviews.schemas import ReviewCreate, ReviewUpdate
 
@@ -107,9 +109,87 @@ class ConsumptionVerifier:
     }
 
 
+class TargetOwnerResolver:
+    """Resolves which user should be notified about a new review on a
+    given target - the resource's own owner (company_owner/hotel_owner/
+    event_organizer/store_manager). Same dispatch-by-target_type shape
+    and same reasoning as ConsumptionVerifier above (raw collection
+    reads, not five more repository imports for one narrow lookup
+    each). Returns None rather than raising when a target/its parent
+    can't be resolved (deleted target, malformed id, unknown
+    target_type) - a notification failure shouldn't block the review
+    itself from being created."""
+
+    async def resolve_owner(self, target_type: str, target_id: str) -> str | None:
+        if not ObjectId.is_valid(target_id):
+            return None
+
+        resolver = self._RESOLVERS.get(target_type)
+
+        if resolver is None:
+            return None
+
+        return await resolver(self, target_id)
+
+    async def _trip(self, target_id: str) -> str | None:
+        trip = await db.trips.find_one({"_id": ObjectId(target_id)})
+
+        if not trip or not ObjectId.is_valid(trip.get("company_id", "")):
+            return None
+
+        company = await db.companies.find_one({"_id": ObjectId(trip["company_id"])})
+        return company["owner_id"] if company else None
+
+    async def _hotel(self, target_id: str) -> str | None:
+        hotel = await db.hotels.find_one({"_id": ObjectId(target_id)})
+        return hotel["owner_id"] if hotel else None
+
+    async def _room(self, target_id: str) -> str | None:
+        room = await db.rooms.find_one({"_id": ObjectId(target_id)})
+
+        if not room or not ObjectId.is_valid(room.get("hotel_id", "")):
+            return None
+
+        hotel = await db.hotels.find_one({"_id": ObjectId(room["hotel_id"])})
+        return hotel["owner_id"] if hotel else None
+
+    async def _event(self, target_id: str) -> str | None:
+        event = await db.events.find_one({"_id": ObjectId(target_id)})
+        return event["organizer_id"] if event else None
+
+    async def _product(self, target_id: str) -> str | None:
+        product = await db.products.find_one({"_id": ObjectId(target_id)})
+
+        if not product or not ObjectId.is_valid(product.get("store_id", "")):
+            return None
+
+        store = await db.stores.find_one({"_id": ObjectId(product["store_id"])})
+        return store["owner_id"] if store else None
+
+    async def _store(self, target_id: str) -> str | None:
+        store = await db.stores.find_one({"_id": ObjectId(target_id)})
+        return store["owner_id"] if store else None
+
+    async def _company(self, target_id: str) -> str | None:
+        company = await db.companies.find_one({"_id": ObjectId(target_id)})
+        return company["owner_id"] if company else None
+
+    _RESOLVERS = {
+        "trip": _trip,
+        "hotel": _hotel,
+        "room": _room,
+        "event": _event,
+        "product": _product,
+        "store": _store,
+        "company": _company,
+    }
+
+
 class ReviewService:
     def __init__(self):
         self.repository = ReviewRepository()
+        self.owner_resolver = TargetOwnerResolver()
+        self.notification_service = NotificationService()
         self.verifier = ConsumptionVerifier()
 
     async def create_review(self, data: ReviewCreate, author_id: str):
@@ -146,6 +226,21 @@ class ReviewService:
             review = await self.repository.create(review)
         except DuplicateKeyError:
             raise HTTPException(status_code=409, detail=_ALREADY_REVIEWED_MESSAGE)
+
+        owner_id = await self.owner_resolver.resolve_owner(
+            review["target_type"], review["target_id"]
+        )
+
+        if owner_id:
+            await self.notification_service.send(
+                owner_id,
+                "review_received",
+                {
+                    "target_type": review["target_type"],
+                    "target_id": review["target_id"],
+                    "rating": review["rating"],
+                },
+            )
 
         return self._format(review)
 
