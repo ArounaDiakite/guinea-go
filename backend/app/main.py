@@ -1,5 +1,8 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+
+from app.core.config import settings
 from app.modules.transport.buses.router import router as buses_router
 from app.modules.transport.drivers.router import router as drivers_router
 from app.modules.transport.stations.router import router as stations_router
@@ -45,6 +48,18 @@ app = FastAPI(
     title="Guinea Go API",
     version="1.0.0",
     description="Transport • Hotels • Events",
+)
+
+_cors_origins = (
+    ["*"] if settings.CORS_ORIGINS == "*" else settings.CORS_ORIGINS.split(",")
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins,
+    allow_credentials=settings.CORS_ORIGINS != "*",
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
