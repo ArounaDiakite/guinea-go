@@ -304,6 +304,49 @@ class TransportRepository {
 
     return summaries;
   }
+
+  Future<Driver> getMyDriverProfile() async {
+    final response = await _dio.get<Map<String, dynamic>>('/drivers/me');
+    return Driver.fromJson(response.data!);
+  }
+
+  /// The trips assigned to the logged-in driver - resolves their own
+  /// driver_id first (GET /drivers/me), since GET /trips/ has no
+  /// concept of "the caller" and filters purely by the driver_id it's
+  /// given. Stitches the same route/company/city display data as
+  /// searchTrips, reusing this repository's reference-data cache.
+  Future<List<TripSearchResult>> getAssignedTrips() async {
+    final driver = await getMyDriverProfile();
+    final response = await _dio.get<List<dynamic>>(
+      '/trips/',
+      queryParameters: {'driver_id': driver.id, 'limit': 100},
+    );
+
+    final results = <TripSearchResult>[];
+
+    for (final json in response.data!) {
+      final trip = Trip.fromJson(json as Map<String, dynamic>);
+      final route = await _routeById(trip.routeId);
+      final company = await _companyById(trip.companyId);
+      final originStation = await _stationById(route.originStationId);
+      final destinationStation = await _stationById(route.destinationStationId);
+      final originCity = await _cityById(originStation.cityId);
+      final destinationCity = await _cityById(destinationStation.cityId);
+
+      results.add(
+        TripSearchResult(
+          trip: trip,
+          route: route,
+          company: company,
+          originCityName: originCity.name,
+          destinationCityName: destinationCity.name,
+        ),
+      );
+    }
+
+    results.sort((a, b) => a.trip.departureDatetime.compareTo(b.trip.departureDatetime));
+    return results;
+  }
 }
 
 final transportRepositoryProvider = Provider<TransportRepository>((ref) {

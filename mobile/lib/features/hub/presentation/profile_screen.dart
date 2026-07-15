@@ -76,6 +76,25 @@ class ProfileScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
+                // Only the passenger booking flow lives under
+                // /hub/transport/bookings - a driver's route tree
+                // never registers it, so this stays passenger-only.
+                if (user.role == 'passenger') ...[
+                  const SizedBox(height: AppSpacing.md),
+                  AppCard(
+                    onTap: () => context.push('/hub/transport/bookings'),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.confirmation_number_outlined, color: AppColors.textSecondary, size: 20),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Text('Mes réservations', style: textTheme.bodyLarge),
+                        ),
+                        const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.xl),
                 AppButton(
                   label: 'Se déconnecter',

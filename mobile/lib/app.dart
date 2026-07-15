@@ -18,6 +18,7 @@ import 'features/transport/models/trip_seat.dart';
 import 'features/transport/presentation/booking_screen.dart';
 import 'features/transport/presentation/my_bookings_screen.dart';
 import 'features/transport/presentation/payment_screen.dart';
+import 'features/transport/presentation/driver_trips_screen.dart';
 import 'features/transport/presentation/results_screen.dart';
 import 'features/transport/presentation/search_screen.dart';
 import 'features/transport/presentation/ticket_screen.dart';
@@ -49,9 +50,11 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-// Branch order here MUST match hubDestinations in
-// features/hub/hub_destinations.dart - the shell picks its selected
-// tab by branch index.
+// A single, fixed branch list regardless of role - HubDestination.
+// branchIndex (features/hub/hub_destinations.dart) is what maps a
+// role's *visible* tabs back to a position here, so branches can be
+// appended (like the driver one below) without renumbering existing
+// ones or rebuilding GoRouter on login.
 final List<RouteBase> _routes = [
     GoRoute(
       path: '/',
@@ -164,6 +167,17 @@ final List<RouteBase> _routes = [
         StatefulShellBranch(
           routes: [
             GoRoute(path: '/hub/profile', builder: (context, state) => const ProfileScreen()),
+          ],
+        ),
+        // branchIndex 7 in hub_destinations.dart - driver-only, never
+        // shown/reachable for a passenger since hubDestinationsForRole
+        // never offers it to them.
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/hub/driver/trips',
+              builder: (context, state) => const DriverTripsScreen(),
+            ),
           ],
         ),
       ],

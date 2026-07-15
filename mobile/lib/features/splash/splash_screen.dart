@@ -66,7 +66,13 @@ Future<void> _proceedPastSplash(BuildContext context, WidgetRef ref) async {
   final user = await ref.read(authControllerProvider.future).catchError((_) => null);
 
   if (!context.mounted) return;
-  context.go(user != null ? '/hub/home' : '/login');
+
+  if (user == null) {
+    context.go('/login');
+    return;
+  }
+
+  context.go(user.role == 'driver' ? '/hub/driver/trips' : '/hub/home');
 }
 
 class _BrandMark extends StatelessWidget {
