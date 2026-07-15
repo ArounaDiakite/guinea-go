@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
@@ -9,80 +8,96 @@ import 'app_colors.dart';
 /// - Poppins (geometric, warm, has personality) for headings/titles.
 /// - Inter (neutral, optimized for legibility at small sizes) for
 ///   body copy, labels and captions.
+///
+/// Both are bundled locally (assets/fonts/, declared in pubspec.yaml)
+/// rather than fetched at runtime via google_fonts - this market can't
+/// assume reliable connectivity for a CDN font fetch on first launch,
+/// and a bundled font keeps widget tests deterministic too.
 class AppTypography {
   AppTypography._();
 
   static TextTheme get textTheme => TextTheme(
         // Hero / splash titles
-        displayLarge: GoogleFonts.poppins(
+        displayLarge: const TextStyle(
+          fontFamily: 'Poppins',
           fontSize: 32,
           height: 1.2,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
         ),
         // Screen titles
-        headlineMedium: GoogleFonts.poppins(
+        headlineMedium: const TextStyle(
+          fontFamily: 'Poppins',
           fontSize: 24,
           height: 1.25,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
         // Section headers
-        titleLarge: GoogleFonts.poppins(
+        titleLarge: const TextStyle(
+          fontFamily: 'Poppins',
           fontSize: 20,
           height: 1.3,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
         // Card titles, list item titles
-        titleMedium: GoogleFonts.poppins(
+        titleMedium: const TextStyle(
+          fontFamily: 'Poppins',
           fontSize: 16,
           height: 1.3,
           fontWeight: FontWeight.w500,
           color: AppColors.textPrimary,
         ),
-        titleSmall: GoogleFonts.poppins(
+        titleSmall: const TextStyle(
+          fontFamily: 'Poppins',
           fontSize: 14,
           height: 1.3,
           fontWeight: FontWeight.w500,
           color: AppColors.textPrimary,
         ),
         // Primary body text
-        bodyLarge: GoogleFonts.inter(
+        bodyLarge: const TextStyle(
+          fontFamily: 'Inter',
           fontSize: 16,
           height: 1.5,
           fontWeight: FontWeight.w400,
           color: AppColors.textPrimary,
         ),
         // Secondary body text
-        bodyMedium: GoogleFonts.inter(
+        bodyMedium: const TextStyle(
+          fontFamily: 'Inter',
           fontSize: 14,
           height: 1.5,
           fontWeight: FontWeight.w400,
           color: AppColors.textPrimary,
         ),
         // Captions, hints, timestamps
-        bodySmall: GoogleFonts.inter(
+        bodySmall: const TextStyle(
+          fontFamily: 'Inter',
           fontSize: 12,
           height: 1.4,
           fontWeight: FontWeight.w400,
           color: AppColors.textSecondary,
         ),
         // Button labels
-        labelLarge: GoogleFonts.inter(
+        labelLarge: const TextStyle(
+          fontFamily: 'Inter',
           fontSize: 15,
           height: 1.2,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.2,
           color: AppColors.textOnPrimary,
         ),
-        labelMedium: GoogleFonts.inter(
+        labelMedium: const TextStyle(
+          fontFamily: 'Inter',
           fontSize: 13,
           height: 1.2,
           fontWeight: FontWeight.w500,
           color: AppColors.textSecondary,
         ),
-        labelSmall: GoogleFonts.inter(
+        labelSmall: const TextStyle(
+          fontFamily: 'Inter',
           fontSize: 11,
           height: 1.2,
           fontWeight: FontWeight.w500,
