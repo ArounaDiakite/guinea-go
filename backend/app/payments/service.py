@@ -10,6 +10,7 @@ from app.modules.education.fees.repository import StudentFeeRepository
 from app.modules.education.institutions.repository import InstitutionRepository
 from app.modules.education.students.repository import StudentRepository
 from app.modules.events.bookings.repository import EventBookingRepository
+from app.modules.events.event_tickets.service import EventTicketService
 from app.modules.hotels.reservations.repository import HotelBookingRepository
 from app.modules.transport.bookings.repository import BookingRepository
 from app.modules.transport.tickets.service import TicketService
@@ -71,6 +72,7 @@ class PaymentService:
         self.institution_repository = InstitutionRepository()
         self.notification_service = NotificationService()
         self.ticket_service = TicketService()
+        self.event_ticket_service = EventTicketService()
 
     def _booking_repository(self, booking_type: str):
         return self.booking_repositories[booking_type]
@@ -161,6 +163,8 @@ class PaymentService:
 
             if booking_type == "transport":
                 await self.ticket_service.issue_for_booking(booking)
+            elif booking_type == "event":
+                await self.event_ticket_service.issue_for_booking(booking)
 
             owner_field = _OWNER_FIELD_BY_TYPE.get(booking_type, "passenger_id")
 

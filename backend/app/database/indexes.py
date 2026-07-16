@@ -158,6 +158,11 @@ async def create_indexes():
     await db.tickets.create_index("booking_id", unique=True)
     await db.tickets.create_index("code", unique=True)
 
+    # Event tickets - same shape as tickets above, for
+    # EventTicketService.issue_for_booking/validate_ticket.
+    await db.event_tickets.create_index("booking_id", unique=True)
+    await db.event_tickets.create_index("code", unique=True)
+
     # Payments - booking_id is what every lookup in this collection
     # filters on (get_by_booking/get_pending_by_booking/
     # get_all_by_booking), across all five booking_type values.
