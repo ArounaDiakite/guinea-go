@@ -139,7 +139,9 @@ class _HotelInfoCard extends ConsumerWidget {
             children: [
               const Icon(Icons.phone_outlined, size: 18, color: AppColors.textSecondary),
               const SizedBox(width: AppSpacing.sm),
-              Text(hotel.phone, style: textTheme.bodyMedium),
+              Expanded(
+                child: Text(hotel.phone, style: textTheme.bodyMedium, overflow: TextOverflow.ellipsis),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
@@ -147,7 +149,9 @@ class _HotelInfoCard extends ConsumerWidget {
             children: [
               const Icon(Icons.mail_outline_rounded, size: 18, color: AppColors.textSecondary),
               const SizedBox(width: AppSpacing.sm),
-              Text(hotel.email, style: textTheme.bodyMedium),
+              Expanded(
+                child: Text(hotel.email, style: textTheme.bodyMedium, overflow: TextOverflow.ellipsis),
+              ),
             ],
           ),
           if (hotel.website != null && hotel.website!.isNotEmpty) ...[
@@ -156,7 +160,9 @@ class _HotelInfoCard extends ConsumerWidget {
               children: [
                 const Icon(Icons.public_outlined, size: 18, color: AppColors.textSecondary),
                 const SizedBox(width: AppSpacing.sm),
-                Text(hotel.website!, style: textTheme.bodyMedium),
+                Expanded(
+                  child: Text(hotel.website!, style: textTheme.bodyMedium, overflow: TextOverflow.ellipsis),
+                ),
               ],
             ),
           ],
@@ -238,9 +244,21 @@ class _RoomCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text('${room.roomType.label} · Chambre ${room.roomNumber}', style: textTheme.titleSmall),
+                child: Text(
+                  '${room.roomType.label} · Chambre ${room.roomNumber}',
+                  style: textTheme.titleSmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              Text(formatGnf(room.basePrice), style: textTheme.titleMedium?.copyWith(color: AppColors.primary)),
+              const SizedBox(width: AppSpacing.sm),
+              Flexible(
+                child: Text(
+                  formatGnf(room.basePrice),
+                  style: textTheme.titleMedium?.copyWith(color: AppColors.primary),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
@@ -248,9 +266,12 @@ class _RoomCard extends StatelessWidget {
             children: [
               const Icon(Icons.person_outline_rounded, size: 16, color: AppColors.textSecondary),
               const SizedBox(width: AppSpacing.xs),
-              Text(
-                '${room.capacity} personne${room.capacity > 1 ? 's' : ''} · par nuit',
-                style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+              Expanded(
+                child: Text(
+                  '${room.capacity} personne${room.capacity > 1 ? 's' : ''} · par nuit',
+                  style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),

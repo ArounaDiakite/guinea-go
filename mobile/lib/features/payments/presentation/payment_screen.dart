@@ -239,7 +239,13 @@ class _ProviderTile extends StatelessWidget {
             color: selected ? AppColors.primary : AppColors.textHint,
           ),
           const SizedBox(width: AppSpacing.md),
-          Text(provider.label, style: Theme.of(context).textTheme.bodyLarge),
+          Expanded(
+            child: Text(
+              provider.label,
+              style: Theme.of(context).textTheme.bodyLarge,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );

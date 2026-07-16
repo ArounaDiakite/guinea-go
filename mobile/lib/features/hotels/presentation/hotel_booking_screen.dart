@@ -179,12 +179,25 @@ class _RecapRow extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary)),
-        Text(
-          value,
-          style: emphasize ? textTheme.titleLarge?.copyWith(color: AppColors.primary) : textTheme.bodyLarge,
+        Flexible(
+          child: Text(
+            label,
+            style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Flexible(
+          flex: 2,
+          child: Text(
+            value,
+            style: emphasize ? textTheme.titleLarge?.copyWith(color: AppColors.primary) : textTheme.bodyLarge,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            textAlign: TextAlign.end,
+          ),
         ),
       ],
     );

@@ -140,14 +140,25 @@ class _HotelResultCard extends StatelessWidget {
           Row(
             children: [
               if (result.reviewCount > 0)
-                Text(
-                  '${result.reviewCount} avis',
-                  style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                Flexible(
+                  child: Text(
+                    '${result.reviewCount} avis',
+                    style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                )
+              else
+                const Spacer(),
+              Flexible(
+                flex: 2,
+                child: Text(
+                  'À partir de ${formatGnf(result.startingPrice)}',
+                  style: textTheme.titleMedium?.copyWith(color: AppColors.primary),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  textAlign: TextAlign.end,
                 ),
-              const Spacer(),
-              Text(
-                'À partir de ${formatGnf(result.startingPrice)}',
-                style: textTheme.titleMedium?.copyWith(color: AppColors.primary),
               ),
             ],
           ),

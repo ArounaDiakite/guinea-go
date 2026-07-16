@@ -111,24 +111,26 @@ void main() {
   HttpOverrides.global = null;
   setUpMockSecureStorage();
 
+  final setupDio = Dio(BaseOptions(baseUrl: AppConfig.apiBaseUrl));
+  late Options ownerAuthHeader;
+  late String roomId;
   late String roomNumber;
   late double basePrice;
   late String expectedTotalText;
 
   setUpAll(() async {
-    final setupDio = Dio(BaseOptions(baseUrl: AppConfig.apiBaseUrl));
-
     final loginResponse = await setupDio.post<Map<String, dynamic>>(
       '/auth/login',
       data: {'email': _hotelOwnerEmail, 'password': _hotelOwnerPassword},
     );
     final ownerToken = loginResponse.data!['access_token'] as String;
     final ownerId = (loginResponse.data!['user'] as Map<String, dynamic>)['id'] as String;
+    ownerAuthHeader = Options(headers: {'Authorization': 'Bearer $ownerToken'});
 
     final hotelsResponse = await setupDio.get<List<dynamic>>(
       '/hotels/',
       queryParameters: {'owner_id': ownerId, 'limit': 1},
-      options: Options(headers: {'Authorization': 'Bearer $ownerToken'}),
+      options: ownerAuthHeader,
     );
     if (hotelsResponse.data!.isEmpty) {
       throw StateError(
@@ -141,12 +143,12 @@ void main() {
     final uniqueSuffix = DateTime.now().millisecondsSinceEpoch;
     roomNumber = 'E2E-$uniqueSuffix';
     // Priced uniquely per run (not just numbered uniquely) - the "Réserver
-    // · <price>" button label is otherwise indistinguishable from every
-    // other room a previous run of this same test left behind on the
-    // fixture hotel, which have all accumulated at the same fixed price.
+    // · <price>" button label would otherwise be indistinguishable from
+    // any other room a previous run of this same test left behind on
+    // the fixture hotel.
     basePrice = (100000 + (uniqueSuffix % 100000)).toDouble();
 
-    await setupDio.post<Map<String, dynamic>>(
+    final roomResponse = await setupDio.post<Map<String, dynamic>>(
       '/rooms/',
       data: {
         'hotel_id': hotelId,
@@ -155,13 +157,27 @@ void main() {
         'capacity': 1,
         'base_price': basePrice,
       },
-      options: Options(headers: {'Authorization': 'Bearer $ownerToken'}),
+      options: ownerAuthHeader,
     );
+    roomId = roomResponse.data!['id'] as String;
 
     // HotelSearchScreen defaults check_in/check_out to tomorrow -> the
     // day after, i.e. exactly one night - so the total equals the
     // per-night price here.
     expectedTotalText = formatGnf(basePrice * 1);
+  });
+
+  tearDownAll(() async {
+    // This test used to leave every run's room behind on the shared
+    // fixture hotel forever - after enough runs, the accumulated list
+    // pushed this run's own "Réserver" button below any fixed test
+    // viewport height, however tall, making ensureVisible()'s scroll
+    // land right at the edge and the tap silently miss. Best-effort
+    // cleanup here is what actually fixes that, not a taller viewport.
+    try {
+      await setupDio.delete<void>('/rooms/$roomId', options: ownerAuthHeader);
+    } catch (_) {}
+    setupDio.close();
   });
 
   testWidgets('search a hotel, book a room, pay via the sandbox, and see it confirmed', (tester) async {
@@ -171,12 +187,13 @@ void main() {
     // randomly) can get scrolled by ensureVisible() to sit right at
     // the bottom edge of the viewport - tap() then silently misses,
     // same failure mode root-caused in transport_ticket_test.dart's
-    // seat grid. Only the height is extended (width kept at the
-    // default 800) - some Row layouts on this screen and the results
-    // screen overflow at a genuinely phone-narrow width since they
-    // weren't built/tested against one; a real layout gap, but not
-    // one this test should block on or paper over here.
-    tester.view.physicalSize = const Size(800, 1600);
+    // seat grid. A real budget-Android-phone width (same technique as
+    // auth_flow_test.dart) also now doubles as regression coverage for
+    // the Row overflow bugs on this screen and the results/detail
+    // screens that a too-narrow width used to trigger - fixed directly
+    // (Expanded/Flexible + ellipsis on the previously-unconstrained
+    // sides) rather than avoided by picking a wide test surface.
+    tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
