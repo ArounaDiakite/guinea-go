@@ -165,6 +165,21 @@ void main() {
   });
 
   testWidgets('search a hotel, book a room, pay via the sandbox, and see it confirmed', (tester) async {
+    // The default 800x600 test surface is short enough that a room
+    // card sorted further down the list (this fixture hotel has
+    // accumulated many rooms from past runs, each priced essentially
+    // randomly) can get scrolled by ensureVisible() to sit right at
+    // the bottom edge of the viewport - tap() then silently misses,
+    // same failure mode root-caused in transport_ticket_test.dart's
+    // seat grid. Only the height is extended (width kept at the
+    // default 800) - some Row layouts on this screen and the results
+    // screen overflow at a genuinely phone-narrow width since they
+    // weren't built/tested against one; a real layout gap, but not
+    // one this test should block on or paper over here.
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
     final uniqueSuffix = DateTime.now().millisecondsSinceEpoch;
     final email = 'flutter_hotel_booking_$uniqueSuffix@test.com';
 

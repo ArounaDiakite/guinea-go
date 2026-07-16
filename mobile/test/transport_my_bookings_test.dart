@@ -199,6 +199,25 @@ void main() {
     // confirm it renders the now-cancelled booking correctly - this is
     // the real screen, real data, just not fighting the first widget's
     // already-heavily-used connection for this final render check.
+    //
+    // Calling pumpWidget(buildTestApp()) a second time is NOT enough on
+    // its own: flutter_test's Element tree reconciles by widget type,
+    // and since buildTestApp() returns the exact same widget shape both
+    // times, the framework treats the second call as an *update* to the
+    // existing element tree rather than a fresh mount - so the old
+    // ScaffoldMessengerState (still holding the error SnackBar from the
+    // first widget's own flaky cancel-tap connection, see the comment
+    // at the top of this file) and the old myBookingsProvider's cached
+    // (pre-cancellation) AsyncValue both survive untouched, and no new
+    // fetch ever happens. Confirmed directly: without the forced
+    // unmount below, this assertion saw the stale "En attente de
+    // paiement" card plus a leftover "Impossible de joindre le
+    // serveur..." SnackBar, not the fresh CANCELLED state the backend
+    // already confirmed above. Pumping an unrelated widget type first
+    // forces a real teardown, guaranteeing the following pumpWidget
+    // mounts a genuinely fresh tree.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
     await tester.runAsync(() async {
       await tester.pumpWidget(buildTestApp());
       await Future.delayed(const Duration(seconds: 12));
