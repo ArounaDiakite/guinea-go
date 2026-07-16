@@ -7,6 +7,7 @@ import '../models/event.dart';
 import '../models/event_booking.dart';
 import '../models/event_booking_summary.dart';
 import '../models/event_search_result.dart';
+import '../models/event_ticket.dart';
 import '../models/ticket_type.dart';
 
 /// Passenger-facing reads/writes for the Events module: search, detail,
@@ -134,6 +135,11 @@ class EventRepository {
   Future<EventBooking> cancelBooking(String bookingId) async {
     final response = await _dio.delete<Map<String, dynamic>>('/event-bookings/$bookingId');
     return EventBooking.fromJson(response.data!);
+  }
+
+  Future<EventTicket> getTicketForBooking(String bookingId) async {
+    final response = await _dio.get<Map<String, dynamic>>('/event-bookings/$bookingId/ticket');
+    return EventTicket.fromJson(response.data!);
   }
 
   Future<TicketType> _getTicketType(String ticketTypeId) async {

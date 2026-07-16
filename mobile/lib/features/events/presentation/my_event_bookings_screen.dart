@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_error.dart';
 import '../../../core/theme/app_colors.dart';
@@ -224,6 +225,14 @@ class _EventBookingCard extends StatelessWidget {
               Text(formatGnf(booking.pricePaid), style: textTheme.titleSmall),
             ],
           ),
+          if (booking.status == BookingStatus.confirmed) ...[
+            const SizedBox(height: AppSpacing.md),
+            AppButton(
+              label: 'Voir le billet',
+              icon: Icons.qr_code_rounded,
+              onPressed: () => context.push('/hub/events/bookings/ticket', extra: summary),
+            ),
+          ],
           if (canCancel) ...[
             const SizedBox(height: AppSpacing.md),
             AppButton(
