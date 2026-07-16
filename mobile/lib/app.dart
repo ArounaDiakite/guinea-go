@@ -3,6 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_theme.dart';
+import 'features/events/models/event_booking_selection.dart';
+import 'features/events/models/event_search_params.dart';
+import 'features/events/presentation/event_booking_screen.dart';
+import 'features/events/presentation/event_bookings_received_screen.dart';
+import 'features/events/presentation/event_detail_screen.dart';
+import 'features/events/presentation/event_form_screen.dart';
+import 'features/events/presentation/event_manage_screen.dart';
+import 'features/events/presentation/event_organizer_home_screen.dart';
+import 'features/events/presentation/event_results_screen.dart';
+import 'features/events/presentation/event_search_screen.dart';
+import 'features/events/presentation/event_ticket_types_screen.dart';
+import 'features/events/presentation/my_event_bookings_screen.dart';
+import 'features/events/presentation/ticket_type_form_screen.dart';
 import 'features/hotels/models/hotel_booking_selection.dart';
 import 'features/hotels/models/hotel_search_params.dart';
 import 'features/hotels/models/hotel_stay.dart';
@@ -185,10 +198,34 @@ final List<RouteBase> _routes = [
           routes: [
             GoRoute(
               path: '/hub/events',
-              builder: (context, state) => const ModulePlaceholderScreen(
-                title: 'Événements',
-                icon: Icons.confirmation_number_rounded,
-              ),
+              builder: (context, state) => const EventSearchScreen(),
+              routes: [
+                GoRoute(
+                  path: 'results',
+                  builder: (context, state) => EventResultsScreen(params: state.extra as EventSearchParams),
+                ),
+                GoRoute(
+                  path: 'bookings',
+                  builder: (context, state) => const MyEventBookingsScreen(),
+                ),
+                GoRoute(
+                  path: ':eventId',
+                  builder: (context, state) => EventDetailScreen(eventId: state.pathParameters['eventId']!),
+                  routes: [
+                    GoRoute(
+                      path: 'booking',
+                      builder: (context, state) =>
+                          EventBookingScreen(selection: state.extra as EventBookingSelection),
+                      routes: [
+                        GoRoute(
+                          path: 'payment',
+                          builder: (context, state) => PaymentScreen(request: state.extra as PaymentRequest),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
             ),
           ],
         ),
@@ -317,6 +354,48 @@ final List<RouteBase> _routes = [
                 GoRoute(
                   path: 'bookings',
                   builder: (context, state) => HotelBookingsReceivedScreen(hotelId: state.extra as String),
+                ),
+              ],
+            ),
+          ],
+        ),
+        // branchIndex 10 in hub_destinations.dart - event_organizer-only.
+        // Unlike company_owner/hotel_owner (one owned entity assumed),
+        // an organizer manages several events, so eventId travels as a
+        // path parameter here (like hotelId does on the passenger-side
+        // hotel detail route) rather than via `extra`.
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/hub/organizer',
+              builder: (context, state) => const EventOrganizerHomeScreen(),
+              routes: [
+                GoRoute(
+                  path: 'new',
+                  builder: (context, state) => const EventFormScreen(),
+                ),
+                GoRoute(
+                  path: ':eventId',
+                  builder: (context, state) => EventManageScreen(eventId: state.pathParameters['eventId']!),
+                  routes: [
+                    GoRoute(
+                      path: 'ticket-types',
+                      builder: (context, state) =>
+                          EventTicketTypesScreen(eventId: state.pathParameters['eventId']!),
+                      routes: [
+                        GoRoute(
+                          path: 'new',
+                          builder: (context, state) =>
+                              TicketTypeFormScreen(eventId: state.pathParameters['eventId']!),
+                        ),
+                      ],
+                    ),
+                    GoRoute(
+                      path: 'bookings',
+                      builder: (context, state) =>
+                          EventBookingsReceivedScreen(eventId: state.pathParameters['eventId']!),
+                    ),
+                  ],
                 ),
               ],
             ),
