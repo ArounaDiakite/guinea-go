@@ -35,8 +35,9 @@ class EventService:
         search: str | None,
         city_id: str | None,
         category: str | None,
+        organizer_id: str | None = None,
     ):
-        events = await self.repository.get_all(page, limit, search, city_id, category)
+        events = await self.repository.get_all(page, limit, search, city_id, category, organizer_id)
         return [self._format(event) for event in events]
 
     async def get_event(self, event_id: str):

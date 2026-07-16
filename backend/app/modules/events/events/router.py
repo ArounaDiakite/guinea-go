@@ -29,8 +29,9 @@ async def get_events(
     search: Optional[str] = None,
     city_id: Optional[str] = None,
     category: Optional[str] = None,
+    organizer_id: Optional[str] = None,
 ):
-    return await service.get_events(page, limit, search, city_id, category)
+    return await service.get_events(page, limit, search, city_id, category, organizer_id)
 
 
 @router.get("/{event_id}", response_model=EventResponse)

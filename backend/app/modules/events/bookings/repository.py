@@ -26,6 +26,15 @@ class EventBookingRepository:
         )
         return await cursor.to_list(length=limit)
 
+    async def get_by_event(self, event_id: str, page: int = 1, limit: int = 20):
+        cursor = (
+            self.collection.find({"event_id": event_id})
+            .sort("created_at", -1)
+            .skip((page - 1) * limit)
+            .limit(limit)
+        )
+        return await cursor.to_list(length=limit)
+
     async def get_stale_pending_bookings(self, ticket_type_id: str, now):
         cursor = self.collection.find(
             {

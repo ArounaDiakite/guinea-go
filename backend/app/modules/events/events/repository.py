@@ -19,6 +19,7 @@ class EventRepository:
         search: str | None = None,
         city_id: str | None = None,
         category: str | None = None,
+        organizer_id: str | None = None,
     ):
         query = {"is_deleted": False}
 
@@ -30,6 +31,9 @@ class EventRepository:
 
         if category:
             query["category"] = category
+
+        if organizer_id:
+            query["organizer_id"] = organizer_id
 
         cursor = (
             self.collection.find(query)
