@@ -20,7 +20,16 @@ class EventOrganizerHomeScreen extends ConsumerWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mes événements')),
+      appBar: AppBar(
+        title: const Text('Mes événements'),
+        actions: [
+          IconButton(
+            tooltip: 'Scanner un billet',
+            icon: const Icon(Icons.qr_code_scanner_rounded),
+            onPressed: () => context.push('/hub/organizer/scan'),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/hub/organizer/new'),
         icon: const Icon(Icons.add_rounded),

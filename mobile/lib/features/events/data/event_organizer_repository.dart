@@ -7,6 +7,7 @@ import '../../../core/models/currency.dart';
 import '../../../core/network/api_client.dart';
 import '../models/event.dart';
 import '../models/event_booking.dart';
+import '../models/event_ticket_validation_result.dart';
 import '../models/ticket_type.dart';
 
 String _isoDatetime(DateTime dateTime) => dateTime.toIso8601String();
@@ -113,6 +114,11 @@ class EventOrganizerRepository {
       queryParameters: {'event_id': eventId, 'limit': 100},
     );
     return response.data!.map((json) => EventBooking.fromJson(json as Map<String, dynamic>)).toList();
+  }
+
+  Future<EventTicketValidationResult> validateTicket(String code) async {
+    final response = await _dio.post<Map<String, dynamic>>('/event-tickets/$code/validate');
+    return EventTicketValidationResult.fromJson(response.data!);
   }
 }
 

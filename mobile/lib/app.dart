@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_theme.dart';
 import 'features/events/models/event_booking_selection.dart';
+import 'features/events/models/event_booking_summary.dart';
 import 'features/events/models/event_search_params.dart';
 import 'features/events/presentation/event_booking_screen.dart';
 import 'features/events/presentation/event_bookings_received_screen.dart';
@@ -13,6 +14,8 @@ import 'features/events/presentation/event_manage_screen.dart';
 import 'features/events/presentation/event_organizer_home_screen.dart';
 import 'features/events/presentation/event_results_screen.dart';
 import 'features/events/presentation/event_search_screen.dart';
+import 'features/events/presentation/event_ticket_scan_screen.dart';
+import 'features/events/presentation/event_ticket_screen.dart';
 import 'features/events/presentation/event_ticket_types_screen.dart';
 import 'features/events/presentation/my_event_bookings_screen.dart';
 import 'features/events/presentation/ticket_type_form_screen.dart';
@@ -207,6 +210,12 @@ final List<RouteBase> _routes = [
                 GoRoute(
                   path: 'bookings',
                   builder: (context, state) => const MyEventBookingsScreen(),
+                  routes: [
+                    GoRoute(
+                      path: 'ticket',
+                      builder: (context, state) => EventTicketScreen(summary: state.extra as EventBookingSummary),
+                    ),
+                  ],
                 ),
                 GoRoute(
                   path: ':eventId',
@@ -373,6 +382,15 @@ final List<RouteBase> _routes = [
                 GoRoute(
                   path: 'new',
                   builder: (context, state) => const EventFormScreen(),
+                ),
+                // Not scoped to one event - an organizer's tickets all
+                // share one code namespace, and validate_ticket checks
+                // the scanned ticket's own event against the caller,
+                // same as the driver-side scan screen isn't nested
+                // under one specific trip either.
+                GoRoute(
+                  path: 'scan',
+                  builder: (context, state) => const EventTicketScanScreen(),
                 ),
                 GoRoute(
                   path: ':eventId',
