@@ -3,12 +3,14 @@ from fastapi import HTTPException
 from app.modules.commerce.cart.repository import CartRepository
 from app.modules.commerce.cart.schemas import AddCartItemRequest, UpdateCartItemRequest
 from app.modules.commerce.products.repository import ProductRepository
+from app.modules.commerce.stores.repository import StoreRepository
 
 
 class CartService:
     def __init__(self):
         self.repository = CartRepository()
         self.product_repository = ProductRepository()
+        self.store_repository = StoreRepository()
 
     async def get_cart(self, customer_id: str):
         cart = await self.repository.get_or_create(customer_id)
@@ -86,6 +88,9 @@ class CartService:
     async def _format(self, cart):
         item_responses = []
         total = 0.0
+        # Several items commonly share a store - cache resolved names
+        # within this one format() call instead of re-fetching per item.
+        store_name_cache: dict[str, str] = {}
 
         for item in cart["items"]:
             product = await self.product_repository.get_by_id(item["product_id"])
@@ -95,6 +100,16 @@ class CartService:
                 # skip it rather than error the whole cart out.
                 continue
 
+            store_id = product["store_id"]
+
+            if store_id not in store_name_cache:
+                store = await self.store_repository.get_by_id(store_id)
+                if not store:
+                    # Same reasoning as a deleted product - skip rather
+                    # than error the whole cart out.
+                    continue
+                store_name_cache[store_id] = store["name"]
+
             subtotal = round(product["price"] * item["quantity"], 2)
             total += subtotal
 
@@ -102,6 +117,8 @@ class CartService:
                 {
                     "product_id": item["product_id"],
                     "product_name": product["name"],
+                    "store_id": store_id,
+                    "store_name": store_name_cache[store_id],
                     "unit_price": product["price"],
                     "quantity": item["quantity"],
                     "subtotal": subtotal,

@@ -14,6 +14,7 @@ import '../../../core/widgets/app_error_banner.dart';
 import '../application/catalog_controller.dart';
 import '../models/category.dart';
 import '../models/product_catalog_entry.dart';
+import 'cart_badge_action.dart';
 
 class ProductCatalogScreen extends ConsumerStatefulWidget {
   const ProductCatalogScreen({super.key});
@@ -49,7 +50,7 @@ class _ProductCatalogScreenState extends ConsumerState<ProductCatalogScreen> {
     final categoriesAsync = ref.watch(categoriesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Commerce')),
+      appBar: AppBar(title: const Text('Commerce'), actions: const [CartBadgeAction()]),
       body: SafeArea(
         child: Column(
           children: [

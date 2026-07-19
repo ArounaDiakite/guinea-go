@@ -16,6 +16,8 @@ class UpdateCartItemRequest(BaseModel):
 class CartItemResponse(BaseModel):
     product_id: str
     product_name: str
+    store_id: str
+    store_name: str
     unit_price: float
     quantity: int
     subtotal: float

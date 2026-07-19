@@ -9,6 +9,7 @@ import '../../../core/utils/currency.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_error_banner.dart';
+import '../application/cart_controller.dart';
 import '../application/catalog_controller.dart';
 import '../data/cart_repository.dart';
 import '../models/product.dart';
@@ -190,6 +191,7 @@ class _AddToCartCardState extends ConsumerState<_AddToCartCard> {
 
     try {
       await ref.read(cartRepositoryProvider).addItem(productId: widget.product.id, quantity: _quantity);
+      ref.invalidate(cartProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Ajouté au panier.')),
