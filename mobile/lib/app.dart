@@ -31,6 +31,9 @@ import 'features/hotels/presentation/hotel_room_form_screen.dart';
 import 'features/hotels/presentation/hotel_rooms_screen.dart';
 import 'features/hotels/presentation/hotel_search_screen.dart';
 import 'features/hotels/presentation/my_hotel_bookings_screen.dart';
+import 'features/commerce/presentation/product_catalog_screen.dart';
+import 'features/commerce/presentation/product_detail_screen.dart';
+import 'features/commerce/presentation/store_screen.dart';
 import 'features/hub/presentation/home_hub_screen.dart';
 import 'features/hub/presentation/hub_scaffold.dart';
 import 'features/hub/presentation/module_placeholder_screen.dart';
@@ -242,10 +245,18 @@ final List<RouteBase> _routes = [
           routes: [
             GoRoute(
               path: '/hub/commerce',
-              builder: (context, state) => const ModulePlaceholderScreen(
-                title: 'Commerce',
-                icon: Icons.storefront_rounded,
-              ),
+              builder: (context, state) => const ProductCatalogScreen(),
+              routes: [
+                GoRoute(
+                  path: 'products/:productId',
+                  builder: (context, state) =>
+                      ProductDetailScreen(productId: state.pathParameters['productId']!),
+                ),
+                GoRoute(
+                  path: 'stores/:storeId',
+                  builder: (context, state) => StoreScreen(storeId: state.pathParameters['storeId']!),
+                ),
+              ],
             ),
           ],
         ),
