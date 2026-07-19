@@ -259,8 +259,178 @@ async def seed_cities():
         )
 
 
+DEMO_STORE_MANAGER = {
+    "first_name": "Ibrahima",
+    "last_name": "Bah",
+    "email": "commercant.demo@guineago.com",
+    "phone": "+224621040506",
+    "city": "Conakry",
+    "country_code": "GN",
+    "preferred_language": "fr",
+}
+DEMO_STORE_MANAGER_PASSWORD = "Demo1234!"
+
+# Every product's category_ids points into this by name (resolved to a
+# real category_id in seed_demo_commerce, same shape as products/
+# service.py does at request time) - kept flat here since these seed
+# categories don't need a parent hierarchy.
+DEMO_CATEGORIES = ["Mode", "Électronique", "Alimentation"]
+
+DEMO_STORES = [
+    {
+        "name": "Fouta Mode",
+        "description": "Prêt-à-porter et accessoires pour toute la famille.",
+        "phone": "+224621111222",
+        "email": "contact@foutamode.gn",
+        "address": "Marché Madina, Conakry",
+        "shipping_info": "Retrait en boutique ou livraison à Conakry sous 48h.",
+        "products": [
+            {"name": "Boubou brodé homme", "category": "Mode", "price": 250000, "stock": 15},
+            {"name": "Robe wax femme", "category": "Mode", "price": 180000, "stock": 20},
+            {"name": "Sandales en cuir", "category": "Mode", "price": 90000, "stock": 30},
+            {"name": "Sac à main tissé", "category": "Mode", "price": 120000, "stock": 12},
+        ],
+    },
+    {
+        "name": "Kaloum Électronique",
+        "description": "Téléphones, accessoires et petit électronique.",
+        "phone": "+224621333444",
+        "email": "contact@kaloumelectro.gn",
+        "address": "Avenue de la République, Kaloum, Conakry",
+        "shipping_info": "Livraison à Conakry sous 24h, garantie 6 mois sur les appareils.",
+        "products": [
+            {"name": "Smartphone Tecno Spark", "category": "Électronique", "price": 950000, "stock": 10},
+            {"name": "Chargeur solaire portable", "category": "Électronique", "price": 150000, "stock": 25},
+            {"name": "Écouteurs Bluetooth", "category": "Électronique", "price": 80000, "stock": 40},
+            {"name": "Powerbank 20000mAh", "category": "Électronique", "price": 200000, "stock": 18},
+        ],
+    },
+    {
+        "name": "Marché Frais Conakry",
+        "description": "Produits alimentaires locaux et boissons artisanales.",
+        "phone": "+224621555666",
+        "email": "contact@marchefrais.gn",
+        "address": "Marché de Niger, Conakry",
+        "shipping_info": "Livraison à domicile à Conakry sous 24h.",
+        "products": [
+            {"name": "Sac de riz local 25kg", "category": "Alimentation", "price": 220000, "stock": 50},
+            {"name": "Huile de palme 5L", "category": "Alimentation", "price": 60000, "stock": 35},
+            {"name": "Café guinéen moulu 1kg", "category": "Alimentation", "price": 45000, "stock": 40},
+            {"name": "Jus de bissap artisanal 1L", "category": "Alimentation", "price": 15000, "stock": 60},
+        ],
+    },
+]
+
+
+async def seed_demo_store_manager():
+    # Bypasses the normal register-partner + admin-activation flow
+    # (see PARTNER_ROLES in core/constants.py), same as the demo
+    # event_organizer - usable to test the passenger catalog flow
+    # immediately, without a system_administrator having to activate
+    # it first.
+    now = datetime.now(UTC)
+    await db.users.update_one(
+        {"email": DEMO_STORE_MANAGER["email"]},
+        {
+            "$set": {
+                **DEMO_STORE_MANAGER,
+                "password": hash_password(DEMO_STORE_MANAGER_PASSWORD),
+                "role": UserRole.STORE_MANAGER.value,
+                "is_active": True,
+                "is_verified": True,
+                "profile_picture": None,
+                "updated_at": now,
+            },
+            "$setOnInsert": {"created_at": now, "last_login": None},
+        },
+        upsert=True,
+    )
+    return await db.users.find_one({"email": DEMO_STORE_MANAGER["email"]})
+
+
+async def seed_demo_commerce():
+    owner = await seed_demo_store_manager()
+    owner_id = str(owner["_id"])
+
+    # Only ever inserts once: re-running this after real demo orders
+    # have decremented product stock must never reset those live
+    # counters back to their seeded starting values.
+    already_seeded = await db.stores.find_one({"owner_id": owner_id, "is_deleted": False})
+    if already_seeded:
+        return
+
+    country = await db.countries.find_one({"code": "GN"})
+    city = await db.cities.find_one({"country_code": "GN", "name": "Conakry"})
+    if not country or not city:
+        # seed_countries()/seed_cities() haven't produced Guinea/Conakry
+        # yet - run_seed() always calls them first, so this shouldn't
+        # happen, but skip cleanly rather than crash if it ever does.
+        return
+
+    country_id = str(country["_id"])
+    city_id = str(city["_id"])
+    currency_id = country["currency_id"]
+
+    now = datetime.now(UTC)
+
+    category_ids = {}
+    for name in DEMO_CATEGORIES:
+        category = await db.categories.find_one({"name": name})
+        if not category:
+            result = await db.categories.insert_one({
+                "name": name,
+                "description": None,
+                "category_parent_id": None,
+                "is_active": True,
+                "is_deleted": False,
+                "created_at": now,
+                "updated_at": now,
+            })
+            category_ids[name] = str(result.inserted_id)
+        else:
+            category_ids[name] = str(category["_id"])
+
+    for store_spec in DEMO_STORES:
+        store = {
+            "name": store_spec["name"],
+            "description": store_spec["description"],
+            "logo_url": None,
+            "phone": store_spec["phone"],
+            "email": store_spec["email"],
+            "country_id": country_id,
+            "city_id": city_id,
+            "address": store_spec["address"],
+            "shipping_info": store_spec["shipping_info"],
+            "owner_id": owner_id,
+            "is_verified": True,
+            "is_active": True,
+            "is_deleted": False,
+            "created_at": now,
+            "updated_at": now,
+        }
+        result = await db.stores.insert_one(store)
+        store_id = str(result.inserted_id)
+
+        for product_spec in store_spec["products"]:
+            await db.products.insert_one({
+                "store_id": store_id,
+                "name": product_spec["name"],
+                "description": None,
+                "price": product_spec["price"],
+                "currency_id": currency_id,
+                "category_ids": [category_ids[product_spec["category"]]],
+                "images": [],
+                "stock": product_spec["stock"],
+                "is_active": True,
+                "is_deleted": False,
+                "created_at": now,
+                "updated_at": now,
+            })
+
+
 async def run_seed():
     await seed_currencies()
     await seed_countries()
     await seed_cities()
     await seed_demo_events()
+    await seed_demo_commerce()
