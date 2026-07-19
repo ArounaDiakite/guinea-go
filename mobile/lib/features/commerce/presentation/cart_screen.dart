@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_error.dart';
 import '../../../core/theme/app_colors.dart';
@@ -82,20 +83,33 @@ class CartScreen extends ConsumerWidget {
                   ),
                   child: SafeArea(
                     top: false,
-                    child: Row(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Total', style: Theme.of(context).textTheme.labelMedium),
-                              Text(
-                                formatGnf(cart.total),
-                                key: const ValueKey('cart-grand-total'),
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.primary),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Total', style: Theme.of(context).textTheme.labelMedium),
+                                  Text(
+                                    formatGnf(cart.total),
+                                    key: const ValueKey('cart-grand-total'),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleLarge?.copyWith(color: AppColors.primary),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        AppButton(
+                          label: 'Passer la commande',
+                          icon: Icons.arrow_forward_rounded,
+                          onPressed: () => context.push('/hub/commerce/checkout'),
                         ),
                       ],
                     ),

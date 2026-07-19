@@ -132,6 +132,17 @@ class OrderService:
 
         return [self._format(order) for order in created_orders]
 
+    async def get_order(self, order_id: str, customer_id: str):
+        order = await self.repository.get_by_id(order_id)
+
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found.")
+
+        if order["customer_id"] != customer_id:
+            raise HTTPException(status_code=403, detail="Not allowed.")
+
+        return self._format(order)
+
     async def cancel_order(self, order_id: str, customer_id: str):
         order = await self.repository.get_by_id(order_id)
 

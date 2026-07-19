@@ -31,7 +31,11 @@ import 'features/hotels/presentation/hotel_room_form_screen.dart';
 import 'features/hotels/presentation/hotel_rooms_screen.dart';
 import 'features/hotels/presentation/hotel_search_screen.dart';
 import 'features/hotels/presentation/my_hotel_bookings_screen.dart';
+import 'features/commerce/models/order_summary.dart';
 import 'features/commerce/presentation/cart_screen.dart';
+import 'features/commerce/presentation/checkout_screen.dart';
+import 'features/commerce/presentation/my_orders_screen.dart';
+import 'features/commerce/presentation/order_detail_screen.dart';
 import 'features/commerce/presentation/product_catalog_screen.dart';
 import 'features/commerce/presentation/product_detail_screen.dart';
 import 'features/commerce/presentation/store_screen.dart';
@@ -260,6 +264,26 @@ final List<RouteBase> _routes = [
                 GoRoute(
                   path: 'cart',
                   builder: (context, state) => const CartScreen(),
+                ),
+                GoRoute(
+                  path: 'checkout',
+                  builder: (context, state) => const CheckoutScreen(),
+                ),
+                GoRoute(
+                  path: 'orders',
+                  builder: (context, state) => const MyOrdersScreen(),
+                  routes: [
+                    GoRoute(
+                      path: ':orderId',
+                      builder: (context, state) => OrderDetailScreen(summary: state.extra as OrderSummary),
+                      routes: [
+                        GoRoute(
+                          path: 'payment',
+                          builder: (context, state) => PaymentScreen(request: state.extra as PaymentRequest),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -27,6 +27,14 @@ async def get_my_orders(
     return await service.get_my_orders(current_user["sub"], page, limit)
 
 
+@router.get("/{order_id}", response_model=OrderResponse)
+async def get_order(
+    order_id: str,
+    current_user=Depends(get_current_user),
+):
+    return await service.get_order(order_id, current_user["sub"])
+
+
 @router.delete("/{order_id}", response_model=OrderResponse)
 async def cancel_order(
     order_id: str,

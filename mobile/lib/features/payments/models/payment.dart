@@ -68,12 +68,14 @@ class Payment {
 enum PaymentBookingType {
   transport,
   hotel,
-  event;
+  event,
+  order;
 
   String get bookingsPathPrefix => switch (this) {
     PaymentBookingType.transport => '/bookings',
     PaymentBookingType.hotel => '/hotel-bookings',
     PaymentBookingType.event => '/event-bookings',
+    PaymentBookingType.order => '/orders',
   };
 }
 

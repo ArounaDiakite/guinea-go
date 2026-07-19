@@ -50,7 +50,17 @@ class _ProductCatalogScreenState extends ConsumerState<ProductCatalogScreen> {
     final categoriesAsync = ref.watch(categoriesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Commerce'), actions: const [CartBadgeAction()]),
+      appBar: AppBar(
+        title: const Text('Commerce'),
+        actions: [
+          IconButton(
+            tooltip: 'Mes commandes',
+            icon: const Icon(Icons.receipt_long_outlined),
+            onPressed: () => context.push('/hub/commerce/orders'),
+          ),
+          const CartBadgeAction(),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [
