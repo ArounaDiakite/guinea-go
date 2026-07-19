@@ -31,6 +31,17 @@ class OrderRepository:
         )
         return await cursor.to_list(length=limit)
 
+    async def get_by_store(self, store_id: str, page: int = 1, limit: int = 20):
+        # Backed by the [("store_id", 1), ("status", 1)] index (see
+        # database/indexes.py) - store_manager's "orders received" view.
+        cursor = (
+            self.collection.find({"store_id": store_id})
+            .sort("created_at", -1)
+            .skip((page - 1) * limit)
+            .limit(limit)
+        )
+        return await cursor.to_list(length=limit)
+
     async def get_stale_pending_orders(self, now):
         # Unscoped (not filtered to one store/product like trip_id/room_id/
         # ticket_type_id elsewhere) - an order can hold stock for several

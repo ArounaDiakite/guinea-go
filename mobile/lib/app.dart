@@ -33,11 +33,19 @@ import 'features/hotels/presentation/hotel_search_screen.dart';
 import 'features/hotels/presentation/my_hotel_bookings_screen.dart';
 import 'features/commerce/models/order_summary.dart';
 import 'features/commerce/presentation/cart_screen.dart';
+import 'features/commerce/presentation/category_form_screen.dart';
+import 'features/commerce/presentation/category_list_screen.dart';
 import 'features/commerce/presentation/checkout_screen.dart';
 import 'features/commerce/presentation/my_orders_screen.dart';
 import 'features/commerce/presentation/order_detail_screen.dart';
 import 'features/commerce/presentation/product_catalog_screen.dart';
 import 'features/commerce/presentation/product_detail_screen.dart';
+import 'features/commerce/presentation/product_form_screen.dart';
+import 'features/commerce/presentation/store_form_screen.dart';
+import 'features/commerce/presentation/store_manage_screen.dart';
+import 'features/commerce/presentation/store_manager_home_screen.dart';
+import 'features/commerce/presentation/store_orders_received_screen.dart';
+import 'features/commerce/presentation/store_product_list_screen.dart';
 import 'features/commerce/presentation/store_screen.dart';
 import 'features/hub/presentation/home_hub_screen.dart';
 import 'features/hub/presentation/hub_scaffold.dart';
@@ -452,6 +460,67 @@ final List<RouteBase> _routes = [
                       path: 'bookings',
                       builder: (context, state) =>
                           EventBookingsReceivedScreen(eventId: state.pathParameters['eventId']!),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+        // branchIndex 11 in hub_destinations.dart - store_manager-only.
+        // Same "several owned entities, id travels as a path parameter"
+        // shape as /hub/organizer above - a store_manager may run more
+        // than one store (see StoreService.create_store).
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/hub/store',
+              builder: (context, state) => const StoreManagerHomeScreen(),
+              routes: [
+                GoRoute(
+                  path: 'new',
+                  builder: (context, state) => const StoreFormScreen(),
+                ),
+                // Not scoped to one store - categories are a shared
+                // taxonomy across every store (see categories/service.py),
+                // not store-owned data.
+                GoRoute(
+                  path: 'categories',
+                  builder: (context, state) => const CategoryListScreen(),
+                  routes: [
+                    GoRoute(
+                      path: 'new',
+                      builder: (context, state) => const CategoryFormScreen(),
+                    ),
+                  ],
+                ),
+                GoRoute(
+                  path: ':storeId',
+                  builder: (context, state) => StoreManageScreen(storeId: state.pathParameters['storeId']!),
+                  routes: [
+                    GoRoute(
+                      path: 'products',
+                      builder: (context, state) =>
+                          StoreProductListScreen(storeId: state.pathParameters['storeId']!),
+                      routes: [
+                        GoRoute(
+                          path: 'new',
+                          builder: (context, state) =>
+                              ProductFormScreen(storeId: state.pathParameters['storeId']!),
+                        ),
+                        GoRoute(
+                          path: ':productId/edit',
+                          builder: (context, state) => ProductFormScreen(
+                            storeId: state.pathParameters['storeId']!,
+                            productId: state.pathParameters['productId']!,
+                          ),
+                        ),
+                      ],
+                    ),
+                    GoRoute(
+                      path: 'orders',
+                      builder: (context, state) =>
+                          StoreOrdersReceivedScreen(storeId: state.pathParameters['storeId']!),
                     ),
                   ],
                 ),

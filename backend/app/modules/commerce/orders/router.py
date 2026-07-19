@@ -27,6 +27,16 @@ async def get_my_orders(
     return await service.get_my_orders(current_user["sub"], page, limit)
 
 
+@router.get("/", response_model=list[OrderResponse])
+async def get_orders(
+    store_id: str = Query(...),
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    current_user=Depends(get_current_user),
+):
+    return await service.get_orders_for_store(store_id, page, limit, current_user["sub"])
+
+
 @router.get("/{order_id}", response_model=OrderResponse)
 async def get_order(
     order_id: str,

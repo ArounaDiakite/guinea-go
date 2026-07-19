@@ -6,10 +6,12 @@ from fastapi import HTTPException, status
 
 from app.common.base_model import BaseDocument
 from app.core.config import settings
+from app.core.permissions import ensure_owner
 from app.core.utils import utc_now
 from app.modules.commerce.cart.repository import CartRepository
 from app.modules.commerce.orders.repository import OrderRepository
 from app.modules.commerce.products.repository import ProductRepository
+from app.modules.commerce.stores.repository import StoreRepository
 
 
 class InsufficientStockException(HTTPException):
@@ -25,6 +27,7 @@ class OrderService:
         self.repository = OrderRepository()
         self.product_repository = ProductRepository()
         self.cart_repository = CartRepository()
+        self.store_repository = StoreRepository()
 
     async def checkout(self, customer_id: str):
         # Release any abandoned PENDING_PAYMENT orders' stock before
@@ -192,6 +195,17 @@ class OrderService:
 
     async def get_my_orders(self, customer_id: str, page: int, limit: int):
         orders = await self.repository.get_by_customer(customer_id, page, limit)
+        return [self._format(order) for order in orders]
+
+    async def get_orders_for_store(self, store_id: str, page: int, limit: int, user_id: str):
+        store = await self.store_repository.get_by_id(store_id)
+
+        if not store:
+            raise HTTPException(status_code=404, detail="Store not found.")
+
+        ensure_owner(store["owner_id"], user_id)
+
+        orders = await self.repository.get_by_store(store_id, page, limit)
         return [self._format(order) for order in orders]
 
     def _format(self, order):

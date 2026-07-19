@@ -115,7 +115,12 @@ class _ModuleShortcut extends StatelessWidget {
             child: Icon(destination.selectedIcon, color: AppColors.primary, size: 22),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(destination.label, style: textTheme.titleSmall),
+          Text(
+            destination.label,
+            style: textTheme.titleSmall,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
         ],
       ),
     );
