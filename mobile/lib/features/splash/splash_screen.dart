@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/app_button.dart';
+import '../hub/hub_destinations.dart';
 import '../identity/application/auth_controller.dart';
 import 'splash_controller.dart';
 
@@ -72,11 +73,7 @@ Future<void> _proceedPastSplash(BuildContext context, WidgetRef ref) async {
     return;
   }
 
-  context.go(switch (user.role) {
-    'driver' => '/hub/driver/trips',
-    'company_owner' => '/hub/company',
-    _ => '/hub/home',
-  });
+  context.go(landingRouteForRole(user.role));
 }
 
 class _BrandMark extends StatelessWidget {

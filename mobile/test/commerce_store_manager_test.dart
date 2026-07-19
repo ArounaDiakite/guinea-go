@@ -153,35 +153,23 @@ void main() {
         await tester.pumpWidget(const ProviderScope(child: GuineaGoApp()));
         await tester.pump();
         await Future.delayed(const Duration(seconds: 3)); // connectivity + session restore + splash hold
-        await tester.pump(); // go_router redirects to /hub/home
-        await Future.delayed(const Duration(seconds: 1));
+        await tester.pump(); // go_router redirects straight to /hub/store (landingRouteForRole)
+        await Future.delayed(const Duration(seconds: 2)); // myStoresProvider resolves
       });
       await tester.pumpAndSettle();
 
-      // Session redirect always lands on /hub/home, not the role's own
-      // branch. The nav bar only shows the *selected* destination's
-      // label (labelBehavior: onlyShowSelected), so "Ma boutique" isn't
-      // rendered as text at all yet - tapped by its icon instead, still
-      // scoped to the NavigationBar in case the home screen's own
-      // shortcuts grid shows the same storefront icon for a different
-      // purpose.
-      // HubScaffold's `effectiveSelected` falls back to position 0
-      // whenever the current branch isn't one of this role's own
-      // destinations (true here: /hub/home is branchIndex 0, and
-      // store_manager's destinations only cover 11 and 6) - so the
-      // "Ma boutique" destination renders as visually (and
-      // structurally) *selected*, i.e. its selectedIcon variant
-      // (storefront_rounded), not the plain outlined one. Match either
-      // so this doesn't depend on that incidental fallback behavior.
+      // Session restore now lands store_manager directly on its own
+      // branch (landingRouteForRole in hub_destinations.dart) rather
+      // than on /hub/home - which used to leave the nav bar's "Ma
+      // boutique" destination highlighted despite Home actually being
+      // on screen, since /hub/home isn't one of this role's own
+      // destinations for HubScaffold's selectedIndex to match.
+      expect(find.text('Mes boutiques'), findsWidgets);
       final storeNavIcon = find.descendant(
         of: find.byType(NavigationBar),
-        matching: find.byWidgetPredicate(
-          (widget) => widget is Icon && (widget.icon == Icons.storefront_outlined || widget.icon == Icons.storefront_rounded),
-        ),
+        matching: find.byIcon(Icons.storefront_rounded),
       );
-      await _tapAndSettle(tester, storeNavIcon);
-
-      expect(find.text('Mes boutiques'), findsWidgets);
+      expect(storeNavIcon, findsOneWidget);
 
       // --- Store ---
       await _tapAndSettle(tester, find.byType(FloatingActionButton));

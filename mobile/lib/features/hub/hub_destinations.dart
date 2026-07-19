@@ -180,3 +180,28 @@ List<HubDestination> hubDestinationsForRole(String? role) {
     _ => _passengerDestinations,
   };
 }
+
+/// Where a session should land right after it's established - a fresh
+/// login, a fresh registration, or a session restored from storage on
+/// app relaunch. Every one of those call sites used to send every role
+/// to '/hub/home' unconditionally; for a role whose own destinations
+/// (above) don't include '/hub/home' at all (every owner-ish role -
+/// company_owner already special-cased this correctly, driver too, but
+/// hotel_owner/event_organizer/store_manager were missed), that left
+/// HubScaffold's `selectedIndex` with no real match. It falls back to
+/// position 0 rather than crash, which visually highlights that role's
+/// first tab (and swaps in its *selected* icon) despite Home - not
+/// that tab - being what's actually on screen. Routing straight to the
+/// role's own landing screen avoids the mismatch entirely, rather than
+/// trying to represent "nothing selected" in a widget whose API
+/// requires a valid index.
+String landingRouteForRole(String? role) {
+  return switch (role) {
+    'driver' => '/hub/driver/trips',
+    'company_owner' => '/hub/company',
+    'hotel_owner' => '/hub/hotel',
+    'event_organizer' => '/hub/organizer',
+    'store_manager' => '/hub/store',
+    _ => '/hub/home',
+  };
+}

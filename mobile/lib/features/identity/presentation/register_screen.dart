@@ -9,6 +9,7 @@ import '../../../core/utils/validators.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_error_banner.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../hub/hub_destinations.dart';
 import '../application/auth_controller.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -59,7 +60,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         password: _passwordController.text,
         city: _cityController.text.trim(),
       );
-      if (mounted) context.go('/hub/home');
+      // Public registration always assigns `passenger` server-side (see
+      // AuthService.register) - landingRouteForRole resolves that to
+      // '/hub/home' the same as the hardcoded value did, just staying
+      // consistent with login/splash instead of duplicating the '/hub/
+      // home' literal a third time.
+      final role = ref.read(authControllerProvider).value?.role;
+      if (mounted) context.go(landingRouteForRole(role));
     } catch (error) {
       if (mounted) setState(() => _errorMessage = extractApiErrorMessage(error));
     } finally {
