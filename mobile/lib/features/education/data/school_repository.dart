@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/city.dart';
@@ -7,7 +8,9 @@ import '../../../core/network/api_client.dart';
 import '../models/academic_unit.dart';
 import '../models/institution.dart';
 import '../models/student.dart';
+import '../models/subject.dart';
 import '../models/teacher.dart';
+import '../models/timeslot.dart';
 
 /// Everything a school_administrator needs to run their own
 /// institution: the institution itself (one per administrator - see
@@ -234,6 +237,99 @@ class SchoolRepository {
       },
     );
     return Student.fromJson(response.data!);
+  }
+
+  Future<List<Subject>> getSubjects(String institutionId) async {
+    final response = await _dio.get<List<dynamic>>(
+      '/subjects/',
+      queryParameters: {'institution_id': institutionId, 'limit': 200},
+    );
+    return response.data!.map((json) => Subject.fromJson(json as Map<String, dynamic>)).toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
+  }
+
+  Future<Subject> getSubject(String subjectId) async {
+    final response = await _dio.get<Map<String, dynamic>>('/subjects/$subjectId');
+    return Subject.fromJson(response.data!);
+  }
+
+  Future<Subject> createSubject({required String institutionId, required String name}) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/subjects/',
+      data: {'institution_id': institutionId, 'name': name},
+    );
+    return Subject.fromJson(response.data!);
+  }
+
+  Future<Subject> updateSubject({
+    required String subjectId,
+    required String institutionId,
+    required String name,
+  }) async {
+    final response = await _dio.put<Map<String, dynamic>>(
+      '/subjects/$subjectId',
+      data: {'institution_id': institutionId, 'name': name},
+    );
+    return Subject.fromJson(response.data!);
+  }
+
+  Future<List<ScheduleItem>> getSchedule(String academicUnitId) async {
+    final response = await _dio.get<List<dynamic>>('/academic-units/$academicUnitId/schedule');
+    return response.data!.map((json) => ScheduleItem.fromJson(json as Map<String, dynamic>)).toList();
+  }
+
+  Future<TimeSlot> getTimeSlot(String timeSlotId) async {
+    final response = await _dio.get<Map<String, dynamic>>('/timeslots/$timeSlotId');
+    return TimeSlot.fromJson(response.data!);
+  }
+
+  Future<TimeSlot> createTimeSlot({
+    required String academicUnitId,
+    required String subjectId,
+    required String teacherId,
+    required DayOfWeek dayOfWeek,
+    required TimeOfDay startTime,
+    required TimeOfDay endTime,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/timeslots/',
+      data: {
+        'academic_unit_id': academicUnitId,
+        'subject_id': subjectId,
+        'teacher_id': teacherId,
+        'day_of_week': dayOfWeek.apiValue,
+        'start_time': formatApiTime(startTime),
+        'end_time': formatApiTime(endTime),
+      },
+    );
+    return TimeSlot.fromJson(response.data!);
+  }
+
+  Future<TimeSlot> updateTimeSlot({
+    required String timeSlotId,
+    required String academicUnitId,
+    required String subjectId,
+    required String teacherId,
+    required DayOfWeek dayOfWeek,
+    required TimeOfDay startTime,
+    required TimeOfDay endTime,
+  }) async {
+    final response = await _dio.put<Map<String, dynamic>>(
+      '/timeslots/$timeSlotId',
+      data: {
+        'academic_unit_id': academicUnitId,
+        'subject_id': subjectId,
+        'teacher_id': teacherId,
+        'day_of_week': dayOfWeek.apiValue,
+        'start_time': formatApiTime(startTime),
+        'end_time': formatApiTime(endTime),
+      },
+    );
+    return TimeSlot.fromJson(response.data!);
+  }
+
+  Future<void> deleteTimeSlot(String timeSlotId) {
+    return _dio.delete<void>('/timeslots/$timeSlotId');
   }
 }
 

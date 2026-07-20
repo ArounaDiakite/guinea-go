@@ -9,27 +9,27 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_error_banner.dart';
 import '../application/school_controller.dart';
-import '../models/academic_unit.dart';
+import '../models/subject.dart';
 
-class AcademicUnitListScreen extends ConsumerWidget {
-  const AcademicUnitListScreen({super.key, required this.institutionId});
+class SubjectListScreen extends ConsumerWidget {
+  const SubjectListScreen({super.key, required this.institutionId});
 
   final String institutionId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final unitsAsync = ref.watch(academicUnitsProvider(institutionId));
+    final subjectsAsync = ref.watch(subjectsProvider(institutionId));
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Classes / départements')),
+      appBar: AppBar(title: const Text('Matières')),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/hub/school/academic-units/new', extra: institutionId),
+        onPressed: () => context.push('/hub/school/subjects/new', extra: institutionId),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Ajouter'),
       ),
       body: SafeArea(
-        child: unitsAsync.when(
+        child: subjectsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stackTrace) => Center(
             child: Padding(
@@ -43,23 +43,23 @@ class AcademicUnitListScreen extends ConsumerWidget {
                     label: 'Réessayer',
                     variant: AppButtonVariant.secondary,
                     expand: false,
-                    onPressed: () => ref.invalidate(academicUnitsProvider(institutionId)),
+                    onPressed: () => ref.invalidate(subjectsProvider(institutionId)),
                   ),
                 ],
               ),
             ),
           ),
-          data: (units) {
-            if (units.isEmpty) {
+          data: (subjects) {
+            if (subjects.isEmpty) {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.xl),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.class_outlined, color: AppColors.textHint, size: 48),
+                      const Icon(Icons.menu_book_outlined, color: AppColors.textHint, size: 48),
                       const SizedBox(height: AppSpacing.md),
-                      Text('Aucune classe enregistrée pour le moment.', style: textTheme.titleMedium),
+                      Text('Aucune matière enregistrée pour le moment.', style: textTheme.titleMedium),
                     ],
                   ),
                 ),
@@ -68,10 +68,10 @@ class AcademicUnitListScreen extends ConsumerWidget {
 
             return ListView.separated(
               padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.xxl),
-              itemCount: units.length,
-              separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
+              itemCount: subjects.length,
+              separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
               itemBuilder: (context, index) =>
-                  _AcademicUnitCard(institutionId: institutionId, unit: units[index]),
+                  _SubjectTile(institutionId: institutionId, subject: subjects[index]),
             );
           },
         ),
@@ -80,54 +80,24 @@ class AcademicUnitListScreen extends ConsumerWidget {
   }
 }
 
-class _AcademicUnitCard extends StatelessWidget {
-  const _AcademicUnitCard({required this.institutionId, required this.unit});
+class _SubjectTile extends StatelessWidget {
+  const _SubjectTile({required this.institutionId, required this.subject});
 
   final String institutionId;
-  final AcademicUnit unit;
+  final Subject subject;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
     return AppCard(
-      onTap: () => context.push(
-        '/hub/school/academic-units/${unit.id}/edit',
-        extra: institutionId,
-      ),
+      onTap: () => context.push('/hub/school/subjects/${subject.id}/edit', extra: institutionId),
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: const Icon(Icons.class_outlined, color: AppColors.primary, size: 20),
-          ),
+          const Icon(Icons.menu_book_outlined, color: AppColors.textSecondary, size: 20),
           const SizedBox(width: AppSpacing.md),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(unit.name, style: textTheme.titleSmall, overflow: TextOverflow.ellipsis, maxLines: 1),
-                Text(
-                  unit.level,
-                  style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            tooltip: 'Emploi du temps',
-            icon: const Icon(Icons.calendar_month_outlined, color: AppColors.textSecondary),
-            onPressed: () => context.push(
-              '/hub/school/academic-units/${unit.id}/schedule',
-              extra: institutionId,
-            ),
+            child: Text(subject.name, style: textTheme.bodyLarge, overflow: TextOverflow.ellipsis, maxLines: 1),
           ),
           const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
         ],

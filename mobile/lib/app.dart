@@ -49,11 +49,15 @@ import 'features/commerce/presentation/store_product_list_screen.dart';
 import 'features/commerce/presentation/store_screen.dart';
 import 'features/education/presentation/academic_unit_form_screen.dart';
 import 'features/education/presentation/academic_unit_list_screen.dart';
+import 'features/education/presentation/academic_unit_schedule_screen.dart';
 import 'features/education/presentation/institution_home_screen.dart';
 import 'features/education/presentation/student_form_screen.dart';
 import 'features/education/presentation/student_list_screen.dart';
+import 'features/education/presentation/subject_form_screen.dart';
+import 'features/education/presentation/subject_list_screen.dart';
 import 'features/education/presentation/teacher_form_screen.dart';
 import 'features/education/presentation/teacher_list_screen.dart';
+import 'features/education/presentation/timeslot_form_screen.dart';
 import 'features/hub/presentation/home_hub_screen.dart';
 import 'features/hub/presentation/hub_scaffold.dart';
 import 'features/hub/presentation/module_placeholder_screen.dart';
@@ -563,6 +567,30 @@ final List<RouteBase> _routes = [
                         academicUnitId: state.pathParameters['academicUnitId']!,
                       ),
                     ),
+                    GoRoute(
+                      path: ':academicUnitId/schedule',
+                      builder: (context, state) => AcademicUnitScheduleScreen(
+                        institutionId: state.extra as String,
+                        academicUnitId: state.pathParameters['academicUnitId']!,
+                      ),
+                      routes: [
+                        GoRoute(
+                          path: 'timeslots/new',
+                          builder: (context, state) => TimeSlotFormScreen(
+                            institutionId: state.extra as String,
+                            academicUnitId: state.pathParameters['academicUnitId']!,
+                          ),
+                        ),
+                        GoRoute(
+                          path: 'timeslots/:timeSlotId/edit',
+                          builder: (context, state) => TimeSlotFormScreen(
+                            institutionId: state.extra as String,
+                            academicUnitId: state.pathParameters['academicUnitId']!,
+                            timeSlotId: state.pathParameters['timeSlotId']!,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
                 GoRoute(
@@ -595,6 +623,23 @@ final List<RouteBase> _routes = [
                       builder: (context, state) => StudentFormScreen(
                         institutionId: state.extra as String,
                         studentId: state.pathParameters['studentId']!,
+                      ),
+                    ),
+                  ],
+                ),
+                GoRoute(
+                  path: 'subjects',
+                  builder: (context, state) => SubjectListScreen(institutionId: state.extra as String),
+                  routes: [
+                    GoRoute(
+                      path: 'new',
+                      builder: (context, state) => SubjectFormScreen(institutionId: state.extra as String),
+                    ),
+                    GoRoute(
+                      path: ':subjectId/edit',
+                      builder: (context, state) => SubjectFormScreen(
+                        institutionId: state.extra as String,
+                        subjectId: state.pathParameters['subjectId']!,
                       ),
                     ),
                   ],

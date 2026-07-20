@@ -6,7 +6,9 @@ import '../data/school_repository.dart';
 import '../models/academic_unit.dart';
 import '../models/institution.dart';
 import '../models/student.dart';
+import '../models/subject.dart';
 import '../models/teacher.dart';
+import '../models/timeslot.dart';
 
 final myInstitutionProvider = FutureProvider.autoDispose<Institution?>((ref) {
   return ref.watch(schoolRepositoryProvider).getMyInstitution();
@@ -64,4 +66,20 @@ final studentsProvider = FutureProvider.autoDispose.family<List<Student>, Studen
 
 final studentDetailProvider = FutureProvider.autoDispose.family<Student, String>((ref, studentId) {
   return ref.watch(schoolRepositoryProvider).getStudent(studentId);
+});
+
+final subjectsProvider = FutureProvider.autoDispose.family<List<Subject>, String>((ref, institutionId) {
+  return ref.watch(schoolRepositoryProvider).getSubjects(institutionId);
+});
+
+final subjectDetailProvider = FutureProvider.autoDispose.family<Subject, String>((ref, subjectId) {
+  return ref.watch(schoolRepositoryProvider).getSubject(subjectId);
+});
+
+final scheduleProvider = FutureProvider.autoDispose.family<List<ScheduleItem>, String>((ref, academicUnitId) {
+  return ref.watch(schoolRepositoryProvider).getSchedule(academicUnitId);
+});
+
+final timeSlotDetailProvider = FutureProvider.autoDispose.family<TimeSlot, String>((ref, timeSlotId) {
+  return ref.watch(schoolRepositoryProvider).getTimeSlot(timeSlotId);
 });

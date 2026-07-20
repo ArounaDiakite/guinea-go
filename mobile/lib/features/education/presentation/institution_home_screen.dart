@@ -125,6 +125,13 @@ class _InstitutionMenu extends StatelessWidget {
           subtitle: 'Inscriptions par classe',
           onTap: () => context.push('/hub/school/students', extra: institution.id),
         ),
+        const SizedBox(height: AppSpacing.sm),
+        _ManagementTile(
+          icon: Icons.menu_book_outlined,
+          label: 'Matières',
+          subtitle: 'Matières enseignées dans l\'établissement',
+          onTap: () => context.push('/hub/school/subjects', extra: institution.id),
+        ),
       ],
     );
   }
