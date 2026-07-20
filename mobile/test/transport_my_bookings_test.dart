@@ -1,11 +1,17 @@
 // Real end-to-end test against the live local backend - no HTTP
-// mocking. Registers a fresh passenger, books a real seat on the
-// seeded "Sily Express" VIP trip directly via the API (bypassing the
-// search/detail UI, already covered by the other transport test
-// files) under that same account's token, then drives the actual
-// "Mes réservations" screen to confirm it shows up, exercises the real
-// cancel button/confirmation dialog, and confirms the cancellation
-// against the backend and a freshly-reloaded copy of the same screen.
+// mocking. Builds its own dedicated company/bus/driver/route/schedule/
+// trip fixture in setUpAll (mirroring transport_search_test.dart and
+// transport_ticket_test.dart) rather than targeting the seeded "Sily
+// Express" VIP trip directly by a hardcoded id - that trip's absolute
+// travel_date drifts into the past exactly like any other fixed-date
+// fixture would, the same failure mode already fixed elsewhere in
+// this suite. Registers a fresh passenger, books a real seat on this
+// run's own trip directly via the API (bypassing the search/detail
+// UI, already covered by the other transport test files) under that
+// same account's token, then drives the actual "Mes réservations"
+// screen to confirm it shows up, exercises the real cancel
+// button/confirmation dialog, and confirms the cancellation against
+// the backend and a freshly-reloaded copy of the same screen.
 //
 // The cancel step deliberately doesn't gate success on the in-place
 // UI update: the widget's own Dio client, by this point in the test,
@@ -37,7 +43,8 @@ import 'package:guinea_go/features/transport/presentation/my_bookings_screen.dar
 import 'package:guinea_go/core/utils/currency.dart';
 import 'package:guinea_go/features/transport/utils/seat_pricing.dart';
 
-const _tripId = '6a570f26ec6ed828b1a425d6'; // today, VIP bus, untouched by the other test files
+const _ownerEmail = 'company_owner_e2e_fixture@test.com';
+const _ownerPassword = 'TestPass123!';
 
 void setUpMockSecureStorage() {
   const channel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
@@ -87,10 +94,167 @@ SeatType _seatTypeOf(String raw) {
   }
 }
 
+String _isoDate(DateTime date) =>
+    '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = null;
   setUpMockSecureStorage();
+
+  final setupDio = Dio(BaseOptions(baseUrl: AppConfig.apiBaseUrl));
+  late Options ownerAuthHeader;
+
+  late String companyName;
+  late String companyId;
+  late String routeId;
+  late String tripId;
+
+  setUpAll(() async {
+    final uniqueSuffix = DateTime.now().millisecondsSinceEpoch;
+    companyName = 'My Bookings E2E $uniqueSuffix';
+
+    final loginResponse = await setupDio.post<Map<String, dynamic>>(
+      '/auth/login',
+      data: {'email': _ownerEmail, 'password': _ownerPassword},
+    );
+    final token = loginResponse.data!['access_token'] as String;
+    ownerAuthHeader = Options(headers: {'Authorization': 'Bearer $token'});
+
+    final countriesResponse = await setupDio.get<List<dynamic>>('/countries/');
+    final guinea = countriesResponse.data!.cast<Map<String, dynamic>>().firstWhere((c) => c['code'] == 'GN');
+
+    final citiesResponse = await setupDio.get<List<dynamic>>('/cities/', queryParameters: {'limit': 100});
+    final conakryCity = citiesResponse.data!.cast<Map<String, dynamic>>().firstWhere((c) => c['name'] == 'Conakry');
+
+    final companyResponse = await setupDio.post<Map<String, dynamic>>(
+      '/companies/',
+      data: {
+        'name': companyName,
+        'company_type': 'BUS',
+        'phone': '+224635000${uniqueSuffix.toString().substring(uniqueSuffix.toString().length - 6)}',
+        'email': 'my_bookings_e2e_$uniqueSuffix@test.com',
+        'address': 'Kaloum, Conakry',
+        'country_id': guinea['id'],
+        'city_id': conakryCity['id'],
+      },
+      options: ownerAuthHeader,
+    );
+    companyId = companyResponse.data!['id'] as String;
+
+    final busResponse = await setupDio.post<Map<String, dynamic>>(
+      '/buses/',
+      data: {
+        'company_id': companyId,
+        'registration_number': 'RC-MB-$uniqueSuffix',
+        'fleet_number': 'F-MB-$uniqueSuffix',
+        'brand': 'Mercedes',
+        'model': 'Sprinter',
+        'manufacture_year': 2024,
+        'seat_capacity': 30,
+        'bus_type': 'VIP',
+      },
+      options: ownerAuthHeader,
+    );
+    final busId = busResponse.data!['id'] as String;
+    await setupDio.post<void>('/buses/$busId/generate-seats', options: ownerAuthHeader);
+
+    final driverResponse = await setupDio.post<Map<String, dynamic>>(
+      '/companies/$companyId/drivers',
+      data: {
+        'first_name': 'My',
+        'last_name': 'Bookings E2E Driver',
+        'email': 'my_bookings_e2e_driver_$uniqueSuffix@test.com',
+        'phone': '+224636000${uniqueSuffix.toString().substring(uniqueSuffix.toString().length - 6)}',
+        'password': 'TestPass123!',
+        'city': 'Conakry',
+        'country_code': 'GN',
+        'preferred_language': 'fr',
+        'profile': {
+          'employee_number': 'EMP-MB-$uniqueSuffix',
+          'gender': 'MALE',
+          'date_of_birth': '1990-01-01',
+          'license_number': 'LIC-MB-$uniqueSuffix',
+          'license_category': 'D',
+          'license_expiry_date': _isoDate(DateTime.now().add(const Duration(days: 730))),
+          'years_of_experience': 5,
+        },
+      },
+      options: ownerAuthHeader,
+    );
+    final driverId = (driverResponse.data!['driver'] as Map<String, dynamic>)['id'] as String;
+
+    final stationsResponse = await setupDio.get<List<dynamic>>('/stations/', queryParameters: {'limit': 100});
+    final stations = stationsResponse.data!.cast<Map<String, dynamic>>();
+    final originStation = stations.firstWhere((s) => s['name'] == 'Conakry Central Bus Station');
+    final destinationStation = stations.firstWhere((s) => s['name'] == 'Kankan Gare Routiere');
+
+    final routeResponse = await setupDio.post<Map<String, dynamic>>(
+      '/routes/',
+      data: {
+        'company_id': companyId,
+        'route_code': 'MB-$uniqueSuffix',
+        'name': 'Conakry - Kankan My Bookings E2E $uniqueSuffix',
+        'origin_station_id': originStation['id'],
+        'destination_station_id': destinationStation['id'],
+        'distance_km': 620,
+        'estimated_duration_minutes': 540,
+        'base_price': 350000,
+      },
+      options: ownerAuthHeader,
+    );
+    routeId = routeResponse.data!['id'] as String;
+
+    final scheduleResponse = await setupDio.post<Map<String, dynamic>>(
+      '/schedules/',
+      data: {
+        'company_id': companyId,
+        'route_id': routeId,
+        'departure_time': '16:00:00',
+        'operating_days': [
+          'MONDAY',
+          'TUESDAY',
+          'WEDNESDAY',
+          'THURSDAY',
+          'FRIDAY',
+          'SATURDAY',
+          'SUNDAY',
+        ],
+      },
+      options: ownerAuthHeader,
+    );
+
+    final tripResponse = await setupDio.post<Map<String, dynamic>>(
+      '/trips/',
+      data: {
+        'company_id': companyId,
+        'route_id': routeId,
+        'schedule_id': scheduleResponse.data!['id'],
+        'bus_id': busId,
+        'driver_id': driverId,
+        'travel_date': _isoDate(DateTime.now()),
+        'price': 350000,
+      },
+      options: ownerAuthHeader,
+    );
+    tripId = tripResponse.data!['id'] as String;
+  });
+
+  tearDownAll(() async {
+    // Best-effort - this run's own dedicated fixture shouldn't become
+    // tomorrow's orphaned route the way transport_company_management_
+    // test.dart's does.
+    try {
+      await setupDio.delete<void>('/trips/$tripId', options: ownerAuthHeader);
+    } catch (_) {}
+    try {
+      await setupDio.delete<void>('/routes/$routeId', options: ownerAuthHeader);
+    } catch (_) {}
+    try {
+      await setupDio.delete<void>('/companies/$companyId', options: ownerAuthHeader);
+    } catch (_) {}
+    setupDio.close();
+  });
 
   testWidgets('a pending booking shows up in Mes réservations and can be cancelled', (tester) async {
     final uniqueSuffix = DateTime.now().millisecondsSinceEpoch;
@@ -117,10 +281,10 @@ void main() {
       final token = await TokenStorage.readAccessToken();
       final dio = Dio(BaseOptions(baseUrl: AppConfig.apiBaseUrl));
 
-      final tripResponse = await dio.get<Map<String, dynamic>>('/trips/$_tripId');
+      final tripResponse = await dio.get<Map<String, dynamic>>('/trips/$tripId');
       final tripPrice = (tripResponse.data!['price'] as num).toDouble();
 
-      final seatsResponse = await dio.get<List<dynamic>>('/trips/$_tripId/seats');
+      final seatsResponse = await dio.get<List<dynamic>>('/trips/$tripId/seats');
       final available = seatsResponse.data!
           .cast<Map<String, dynamic>>()
           .where((seat) => seat['status'] == 'AVAILABLE')
@@ -130,7 +294,7 @@ void main() {
       expectedPriceText = formatGnf(estimateSeatPrice(tripPrice, _seatTypeOf(chosen['seat_type'] as String)));
 
       final bookingResponse = await dio.post<Map<String, dynamic>>(
-        '/trips/$_tripId/bookings',
+        '/trips/$tripId/bookings',
         data: {'seat_id': chosen['seat_id']},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
@@ -146,7 +310,7 @@ void main() {
     });
     await tester.pumpAndSettle();
 
-    expect(find.text('Sily Express'), findsOneWidget);
+    expect(find.text(companyName), findsOneWidget);
     expect(find.text('Conakry → Kankan'), findsOneWidget);
     expect(find.text('Siège $seatNumber'), findsOneWidget);
     expect(find.text(expectedPriceText), findsOneWidget);
