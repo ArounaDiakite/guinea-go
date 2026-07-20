@@ -102,8 +102,16 @@ async def create_indexes():
     # Institutions: one per school_administrator, enforced at the database
     # level - backs InstitutionService.create_institution's advisory check
     # against a genuine double-submit race on a user's very first
-    # institution creation (same reasoning as carts.customer_id).
-    await db.institutions.create_index("administrator_id", unique=True)
+    # institution creation (same reasoning as carts.customer_id). Scoped
+    # to non-deleted documents only (unlike carts.customer_id, which never
+    # gets soft-deleted): without partialFilterExpression, soft-deleting
+    # an institution (is_deleted=True) would leave its administrator_id
+    # permanently claimed in the index, blocking that administrator from
+    # ever creating another institution - the opposite of what "deleted"
+    # is supposed to mean everywhere else in this codebase.
+    await db.institutions.create_index(
+        "administrator_id", unique=True, partialFilterExpression={"is_deleted": False}
+    )
 
     # AcademicUnits / Teachers / Students - fields filtered on in their
     # respective get_by_institution() queries. No cross-institution

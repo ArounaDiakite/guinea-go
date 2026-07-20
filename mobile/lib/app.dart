@@ -47,6 +47,13 @@ import 'features/commerce/presentation/store_manager_home_screen.dart';
 import 'features/commerce/presentation/store_orders_received_screen.dart';
 import 'features/commerce/presentation/store_product_list_screen.dart';
 import 'features/commerce/presentation/store_screen.dart';
+import 'features/education/presentation/academic_unit_form_screen.dart';
+import 'features/education/presentation/academic_unit_list_screen.dart';
+import 'features/education/presentation/institution_home_screen.dart';
+import 'features/education/presentation/student_form_screen.dart';
+import 'features/education/presentation/student_list_screen.dart';
+import 'features/education/presentation/teacher_form_screen.dart';
+import 'features/education/presentation/teacher_list_screen.dart';
 import 'features/hub/presentation/home_hub_screen.dart';
 import 'features/hub/presentation/hub_scaffold.dart';
 import 'features/hub/presentation/module_placeholder_screen.dart';
@@ -521,6 +528,74 @@ final List<RouteBase> _routes = [
                       path: 'orders',
                       builder: (context, state) =>
                           StoreOrdersReceivedScreen(storeId: state.pathParameters['storeId']!),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+        // branchIndex 12 in hub_destinations.dart - school_administrator-
+        // only. One institution per administrator (InstitutionService
+        // enforces it), same "single owned entity, id travels via extra"
+        // shape as /hub/hotel above - not a :institutionId path param
+        // the way /hub/store's several-owned-stores does.
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/hub/school',
+              builder: (context, state) => const InstitutionHomeScreen(),
+              routes: [
+                GoRoute(
+                  path: 'academic-units',
+                  builder: (context, state) =>
+                      AcademicUnitListScreen(institutionId: state.extra as String),
+                  routes: [
+                    GoRoute(
+                      path: 'new',
+                      builder: (context, state) =>
+                          AcademicUnitFormScreen(institutionId: state.extra as String),
+                    ),
+                    GoRoute(
+                      path: ':academicUnitId/edit',
+                      builder: (context, state) => AcademicUnitFormScreen(
+                        institutionId: state.extra as String,
+                        academicUnitId: state.pathParameters['academicUnitId']!,
+                      ),
+                    ),
+                  ],
+                ),
+                GoRoute(
+                  path: 'teachers',
+                  builder: (context, state) => TeacherListScreen(institutionId: state.extra as String),
+                  routes: [
+                    GoRoute(
+                      path: 'new',
+                      builder: (context, state) => TeacherFormScreen(institutionId: state.extra as String),
+                    ),
+                    GoRoute(
+                      path: ':teacherId/edit',
+                      builder: (context, state) => TeacherFormScreen(
+                        institutionId: state.extra as String,
+                        teacherId: state.pathParameters['teacherId']!,
+                      ),
+                    ),
+                  ],
+                ),
+                GoRoute(
+                  path: 'students',
+                  builder: (context, state) => StudentListScreen(institutionId: state.extra as String),
+                  routes: [
+                    GoRoute(
+                      path: 'new',
+                      builder: (context, state) => StudentFormScreen(institutionId: state.extra as String),
+                    ),
+                    GoRoute(
+                      path: ':studentId/edit',
+                      builder: (context, state) => StudentFormScreen(
+                        institutionId: state.extra as String,
+                        studentId: state.pathParameters['studentId']!,
+                      ),
                     ),
                   ],
                 ),

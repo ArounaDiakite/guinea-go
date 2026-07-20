@@ -165,11 +165,29 @@ const List<HubDestination> _storeManagerDestinations = [
   ),
 ];
 
+const List<HubDestination> _schoolAdministratorDestinations = [
+  HubDestination(
+    branchIndex: 12,
+    path: '/hub/school',
+    label: 'Mon établissement',
+    icon: Icons.school_outlined,
+    selectedIcon: Icons.school_rounded,
+  ),
+  HubDestination(
+    branchIndex: 6,
+    path: '/hub/profile',
+    label: 'Profil',
+    icon: Icons.person_outline_rounded,
+    selectedIcon: Icons.person_rounded,
+  ),
+];
+
 /// Source of truth for UserRole values: backend/app/core/constants.py.
-/// Only `driver`, `company_owner`, `hotel_owner`, `event_organizer` and
-/// `store_manager` get a distinct nav set today - every other role
-/// (including passenger) falls back to the passenger tab set, since no
-/// other role has a dedicated hub experience yet.
+/// Only `driver`, `company_owner`, `hotel_owner`, `event_organizer`,
+/// `store_manager` and `school_administrator` get a distinct nav set
+/// today - every other role (including passenger) falls back to the
+/// passenger tab set, since no other role has a dedicated hub
+/// experience yet.
 List<HubDestination> hubDestinationsForRole(String? role) {
   return switch (role) {
     'driver' => _driverDestinations,
@@ -177,6 +195,7 @@ List<HubDestination> hubDestinationsForRole(String? role) {
     'hotel_owner' => _hotelOwnerDestinations,
     'event_organizer' => _eventOrganizerDestinations,
     'store_manager' => _storeManagerDestinations,
+    'school_administrator' => _schoolAdministratorDestinations,
     _ => _passengerDestinations,
   };
 }
@@ -202,6 +221,7 @@ String landingRouteForRole(String? role) {
     'hotel_owner' => '/hub/hotel',
     'event_organizer' => '/hub/organizer',
     'store_manager' => '/hub/store',
+    'school_administrator' => '/hub/school',
     _ => '/hub/home',
   };
 }
