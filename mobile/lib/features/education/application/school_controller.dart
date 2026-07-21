@@ -4,9 +4,11 @@ import '../../../core/models/city.dart';
 import '../../../core/models/country.dart';
 import '../data/school_repository.dart';
 import '../models/academic_unit.dart';
+import '../models/fee_schedule.dart';
 import '../models/grade.dart';
 import '../models/institution.dart';
 import '../models/student.dart';
+import '../models/student_fee.dart';
 import '../models/subject.dart';
 import '../models/teacher.dart';
 import '../models/timeslot.dart';
@@ -119,4 +121,16 @@ class ReportCardQuery {
 
 final reportCardProvider = FutureProvider.autoDispose.family<ReportCard, ReportCardQuery>((ref, query) {
   return ref.watch(schoolRepositoryProvider).getReportCard(query.studentId, query.period);
+});
+
+final feeSchedulesProvider = FutureProvider.autoDispose.family<List<FeeSchedule>, String>((ref, institutionId) {
+  return ref.watch(schoolRepositoryProvider).getFeeSchedules(institutionId);
+});
+
+final feeScheduleDetailProvider = FutureProvider.autoDispose.family<FeeSchedule, String>((ref, feeScheduleId) {
+  return ref.watch(schoolRepositoryProvider).getFeeSchedule(feeScheduleId);
+});
+
+final studentFeesProvider = FutureProvider.autoDispose.family<List<StudentFee>, String>((ref, studentId) {
+  return ref.watch(schoolRepositoryProvider).getStudentFees(studentId);
 });

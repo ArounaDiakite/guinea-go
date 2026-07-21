@@ -5,11 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/city.dart';
 import '../../../core/models/country.dart';
 import '../../../core/network/api_client.dart';
+import '../../payments/models/payment.dart';
 import '../models/academic_unit.dart';
 import '../models/attendance.dart';
+import '../models/fee_schedule.dart';
 import '../models/grade.dart';
 import '../models/institution.dart';
 import '../models/student.dart';
+import '../models/student_fee.dart';
 import '../models/subject.dart';
 import '../models/teacher.dart';
 import '../models/timeslot.dart';
@@ -408,6 +411,96 @@ class SchoolRepository {
       queryParameters: {'period': period.apiValue},
     );
     return ReportCard.fromJson(response.data!);
+  }
+
+  Future<List<FeeSchedule>> getFeeSchedules(String institutionId) async {
+    final response = await _dio.get<List<dynamic>>(
+      '/fee-schedules/',
+      queryParameters: {'institution_id': institutionId, 'limit': 200},
+    );
+    return response.data!.map((json) => FeeSchedule.fromJson(json as Map<String, dynamic>)).toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
+  }
+
+  Future<FeeSchedule> getFeeSchedule(String feeScheduleId) async {
+    final response = await _dio.get<Map<String, dynamic>>('/fee-schedules/$feeScheduleId');
+    return FeeSchedule.fromJson(response.data!);
+  }
+
+  Future<FeeSchedule> createFeeSchedule({
+    required String institutionId,
+    String? academicUnitId,
+    required String name,
+    required double amount,
+    required String period,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/fee-schedules/',
+      data: {
+        'institution_id': institutionId,
+        'academic_unit_id': ?academicUnitId,
+        'name': name,
+        'amount': amount,
+        'period': period,
+      },
+    );
+    return FeeSchedule.fromJson(response.data!);
+  }
+
+  Future<FeeSchedule> updateFeeSchedule({
+    required String feeScheduleId,
+    required String institutionId,
+    String? academicUnitId,
+    required String name,
+    required double amount,
+    required String period,
+  }) async {
+    final response = await _dio.put<Map<String, dynamic>>(
+      '/fee-schedules/$feeScheduleId',
+      data: {
+        'institution_id': institutionId,
+        'academic_unit_id': ?academicUnitId,
+        'name': name,
+        'amount': amount,
+        'period': period,
+      },
+    );
+    return FeeSchedule.fromJson(response.data!);
+  }
+
+  Future<void> deleteFeeSchedule(String feeScheduleId) {
+    return _dio.delete<void>('/fee-schedules/$feeScheduleId');
+  }
+
+  Future<StudentFee> applyFeeSchedule({required String studentId, required String feeScheduleId}) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/students/$studentId/fees',
+      data: {'fee_schedule_id': feeScheduleId},
+    );
+    return StudentFee.fromJson(response.data!);
+  }
+
+  Future<List<StudentFee>> getStudentFees(String studentId) async {
+    final response = await _dio.get<List<dynamic>>('/students/$studentId/fees');
+    return response.data!.map((json) => StudentFee.fromJson(json as Map<String, dynamic>)).toList();
+  }
+
+  /// Cumulative/partial by design - several of these can accumulate
+  /// onto the same StudentFee (see StudentFeeRepository.apply_payment
+  /// on the backend). Returns immediately with status "pending"; the
+  /// backend confirms it ~2s later via a background task, same sandbox
+  /// shape as every other payment flow in this app.
+  Future<Payment> payStudentFee({
+    required String studentId,
+    required String studentFeeId,
+    required PaymentProvider provider,
+    required double amount,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/students/$studentId/fees/payments',
+      data: {'student_fee_id': studentFeeId, 'provider': provider.apiValue, 'amount': amount},
+    );
+    return Payment.fromJson(response.data!);
   }
 }
 

@@ -47,14 +47,20 @@ import 'features/commerce/presentation/store_manager_home_screen.dart';
 import 'features/commerce/presentation/store_orders_received_screen.dart';
 import 'features/commerce/presentation/store_product_list_screen.dart';
 import 'features/commerce/presentation/store_screen.dart';
+import 'features/education/models/student_fee.dart';
 import 'features/education/presentation/academic_unit_form_screen.dart';
 import 'features/education/presentation/academic_unit_list_screen.dart';
 import 'features/education/presentation/academic_unit_schedule_screen.dart';
 import 'features/education/presentation/attendance_entry_screen.dart';
+import 'features/education/presentation/fee_apply_screen.dart';
+import 'features/education/presentation/fee_payment_screen.dart';
+import 'features/education/presentation/fee_schedule_form_screen.dart';
+import 'features/education/presentation/fee_schedule_list_screen.dart';
 import 'features/education/presentation/grade_form_screen.dart';
 import 'features/education/presentation/grade_list_screen.dart';
 import 'features/education/presentation/institution_home_screen.dart';
 import 'features/education/presentation/report_card_screen.dart';
+import 'features/education/presentation/student_fees_screen.dart';
 import 'features/education/presentation/student_form_screen.dart';
 import 'features/education/presentation/student_list_screen.dart';
 import 'features/education/presentation/subject_form_screen.dart';
@@ -662,6 +668,50 @@ final List<RouteBase> _routes = [
                       path: ':studentId/report-card',
                       builder: (context, state) =>
                           ReportCardScreen(studentId: state.pathParameters['studentId']!),
+                    ),
+                    GoRoute(
+                      path: ':studentId/fees',
+                      builder: (context, state) => StudentFeesScreen(
+                        institutionId: state.extra as String,
+                        studentId: state.pathParameters['studentId']!,
+                      ),
+                      routes: [
+                        GoRoute(
+                          path: 'apply',
+                          builder: (context, state) => FeeApplyScreen(
+                            institutionId: state.extra as String,
+                            studentId: state.pathParameters['studentId']!,
+                          ),
+                        ),
+                        // No :studentFeeId path param - same reasoning
+                        // as grades/form: no GET-single-StudentFee
+                        // endpoint, so the full StudentFee travels via
+                        // extra instead.
+                        GoRoute(
+                          path: 'pay',
+                          builder: (context, state) => FeePaymentScreen(
+                            studentId: state.pathParameters['studentId']!,
+                            studentFee: state.extra as StudentFee,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                GoRoute(
+                  path: 'fee-schedules',
+                  builder: (context, state) => FeeScheduleListScreen(institutionId: state.extra as String),
+                  routes: [
+                    GoRoute(
+                      path: 'new',
+                      builder: (context, state) => FeeScheduleFormScreen(institutionId: state.extra as String),
+                    ),
+                    GoRoute(
+                      path: ':feeScheduleId/edit',
+                      builder: (context, state) => FeeScheduleFormScreen(
+                        institutionId: state.extra as String,
+                        feeScheduleId: state.pathParameters['feeScheduleId']!,
+                      ),
                     ),
                   ],
                 ),

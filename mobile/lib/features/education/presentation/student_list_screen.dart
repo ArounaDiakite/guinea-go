@@ -186,6 +186,11 @@ class _StudentCard extends StatelessWidget {
             ),
           ),
           IconButton(
+            tooltip: 'Frais de scolarité',
+            icon: const Icon(Icons.receipt_long_outlined, color: AppColors.textSecondary),
+            onPressed: () => context.push('/hub/school/students/${student.id}/fees', extra: institutionId),
+          ),
+          IconButton(
             tooltip: 'Notes',
             icon: const Icon(Icons.grade_outlined, color: AppColors.textSecondary),
             onPressed: () => context.push('/hub/school/students/${student.id}/grades', extra: institutionId),

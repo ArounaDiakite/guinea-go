@@ -132,6 +132,13 @@ class _InstitutionMenu extends StatelessWidget {
           subtitle: 'Matières enseignées dans l\'établissement',
           onTap: () => context.push('/hub/school/subjects', extra: institution.id),
         ),
+        const SizedBox(height: AppSpacing.sm),
+        _ManagementTile(
+          icon: Icons.receipt_long_outlined,
+          label: 'Frais de scolarité',
+          subtitle: 'Barèmes de frais de l\'établissement',
+          onTap: () => context.push('/hub/school/fee-schedules', extra: institution.id),
+        ),
       ],
     );
   }
