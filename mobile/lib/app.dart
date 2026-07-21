@@ -50,7 +50,11 @@ import 'features/commerce/presentation/store_screen.dart';
 import 'features/education/presentation/academic_unit_form_screen.dart';
 import 'features/education/presentation/academic_unit_list_screen.dart';
 import 'features/education/presentation/academic_unit_schedule_screen.dart';
+import 'features/education/presentation/attendance_entry_screen.dart';
+import 'features/education/presentation/grade_form_screen.dart';
+import 'features/education/presentation/grade_list_screen.dart';
 import 'features/education/presentation/institution_home_screen.dart';
+import 'features/education/presentation/report_card_screen.dart';
 import 'features/education/presentation/student_form_screen.dart';
 import 'features/education/presentation/student_list_screen.dart';
 import 'features/education/presentation/subject_form_screen.dart';
@@ -589,6 +593,14 @@ final List<RouteBase> _routes = [
                             timeSlotId: state.pathParameters['timeSlotId']!,
                           ),
                         ),
+                        GoRoute(
+                          path: 'timeslots/:timeSlotId/attendance',
+                          builder: (context, state) => AttendanceEntryScreen(
+                            institutionId: state.extra as String,
+                            academicUnitId: state.pathParameters['academicUnitId']!,
+                            timeSlotId: state.pathParameters['timeSlotId']!,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -624,6 +636,32 @@ final List<RouteBase> _routes = [
                         institutionId: state.extra as String,
                         studentId: state.pathParameters['studentId']!,
                       ),
+                    ),
+                    GoRoute(
+                      path: ':studentId/grades',
+                      builder: (context, state) => GradeListScreen(
+                        institutionId: state.extra as String,
+                        studentId: state.pathParameters['studentId']!,
+                      ),
+                      routes: [
+                        // No :gradeId path param - the backend has no
+                        // GET-single-grade endpoint, so there's nothing
+                        // to fetch by id. GradeFormArgs (carried via
+                        // extra) is the only source of truth for both
+                        // create and edit.
+                        GoRoute(
+                          path: 'form',
+                          builder: (context, state) => GradeFormScreen(
+                            studentId: state.pathParameters['studentId']!,
+                            args: state.extra as GradeFormArgs,
+                          ),
+                        ),
+                      ],
+                    ),
+                    GoRoute(
+                      path: ':studentId/report-card',
+                      builder: (context, state) =>
+                          ReportCardScreen(studentId: state.pathParameters['studentId']!),
                     ),
                   ],
                 ),

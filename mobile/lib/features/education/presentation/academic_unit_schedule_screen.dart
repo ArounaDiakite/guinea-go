@@ -167,6 +167,14 @@ class _ScheduleItemCard extends StatelessWidget {
               ],
             ),
           ),
+          IconButton(
+            tooltip: 'Présences',
+            icon: const Icon(Icons.how_to_reg_outlined, color: AppColors.textSecondary),
+            onPressed: () => context.push(
+              '/hub/school/academic-units/$academicUnitId/schedule/timeslots/${item.id}/attendance',
+              extra: institutionId,
+            ),
+          ),
           const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
         ],
       ),

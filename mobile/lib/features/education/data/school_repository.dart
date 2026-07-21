@@ -6,6 +6,8 @@ import '../../../core/models/city.dart';
 import '../../../core/models/country.dart';
 import '../../../core/network/api_client.dart';
 import '../models/academic_unit.dart';
+import '../models/attendance.dart';
+import '../models/grade.dart';
 import '../models/institution.dart';
 import '../models/student.dart';
 import '../models/subject.dart';
@@ -331,7 +333,87 @@ class SchoolRepository {
   Future<void> deleteTimeSlot(String timeSlotId) {
     return _dio.delete<void>('/timeslots/$timeSlotId');
   }
+
+  /// Whole-class-at-once, matching AttendanceSubmit's shape exactly -
+  /// one call records every student's status for this time slot and
+  /// date together, not one call per student.
+  Future<List<AttendanceRecord>> submitAttendance({
+    required String timeSlotId,
+    required DateTime date,
+    required Map<String, AttendanceStatus> statuses,
+  }) async {
+    final response = await _dio.post<List<dynamic>>(
+      '/timeslots/$timeSlotId/attendance',
+      data: {'date': _isoDate(date), 'entries': _attendanceEntries(statuses)},
+    );
+    return response.data!.map((json) => AttendanceRecord.fromJson(json as Map<String, dynamic>)).toList();
+  }
+
+  /// PUT counterpart of submitAttendance - the backend requires this
+  /// once a day has already been recorded (POST 409s in that case).
+  Future<List<AttendanceRecord>> correctAttendance({
+    required String timeSlotId,
+    required DateTime date,
+    required Map<String, AttendanceStatus> statuses,
+  }) async {
+    final response = await _dio.put<List<dynamic>>(
+      '/timeslots/$timeSlotId/attendance',
+      data: {'date': _isoDate(date), 'entries': _attendanceEntries(statuses)},
+    );
+    return response.data!.map((json) => AttendanceRecord.fromJson(json as Map<String, dynamic>)).toList();
+  }
+
+  Future<Grade> addGrade({
+    required String studentId,
+    required String subjectId,
+    required double value,
+    required double coefficient,
+    required Period period,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/students/$studentId/grades',
+      data: {'subject_id': subjectId, 'value': value, 'coefficient': coefficient, 'period': period.apiValue},
+    );
+    return Grade.fromJson(response.data!);
+  }
+
+  Future<List<Grade>> getGrades(String studentId, {Period? period}) async {
+    final response = await _dio.get<List<dynamic>>(
+      '/students/$studentId/grades',
+      queryParameters: {'period': ?period?.apiValue},
+    );
+    return response.data!.map((json) => Grade.fromJson(json as Map<String, dynamic>)).toList();
+  }
+
+  /// A full replace, same body shape as addGrade - there is no partial
+  /// PATCH on the backend.
+  Future<Grade> updateGrade({
+    required String studentId,
+    required String gradeId,
+    required String subjectId,
+    required double value,
+    required double coefficient,
+    required Period period,
+  }) async {
+    final response = await _dio.put<Map<String, dynamic>>(
+      '/students/$studentId/grades/$gradeId',
+      data: {'subject_id': subjectId, 'value': value, 'coefficient': coefficient, 'period': period.apiValue},
+    );
+    return Grade.fromJson(response.data!);
+  }
+
+  Future<ReportCard> getReportCard(String studentId, Period period) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/students/$studentId/report-card',
+      queryParameters: {'period': period.apiValue},
+    );
+    return ReportCard.fromJson(response.data!);
+  }
 }
+
+List<Map<String, String>> _attendanceEntries(Map<String, AttendanceStatus> statuses) => [
+  for (final entry in statuses.entries) {'student_id': entry.key, 'status': entry.value.apiValue},
+];
 
 String _isoDate(DateTime date) =>
     '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';

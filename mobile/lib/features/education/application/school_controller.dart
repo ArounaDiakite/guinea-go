@@ -4,6 +4,7 @@ import '../../../core/models/city.dart';
 import '../../../core/models/country.dart';
 import '../data/school_repository.dart';
 import '../models/academic_unit.dart';
+import '../models/grade.dart';
 import '../models/institution.dart';
 import '../models/student.dart';
 import '../models/subject.dart';
@@ -82,4 +83,40 @@ final scheduleProvider = FutureProvider.autoDispose.family<List<ScheduleItem>, S
 
 final timeSlotDetailProvider = FutureProvider.autoDispose.family<TimeSlot, String>((ref, timeSlotId) {
   return ref.watch(schoolRepositoryProvider).getTimeSlot(timeSlotId);
+});
+
+class GradesQuery {
+  const GradesQuery({required this.studentId, this.period});
+
+  final String studentId;
+  final Period? period;
+
+  @override
+  bool operator ==(Object other) =>
+      other is GradesQuery && other.studentId == studentId && other.period == period;
+
+  @override
+  int get hashCode => Object.hash(studentId, period);
+}
+
+final gradesProvider = FutureProvider.autoDispose.family<List<Grade>, GradesQuery>((ref, query) {
+  return ref.watch(schoolRepositoryProvider).getGrades(query.studentId, period: query.period);
+});
+
+class ReportCardQuery {
+  const ReportCardQuery({required this.studentId, required this.period});
+
+  final String studentId;
+  final Period period;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ReportCardQuery && other.studentId == studentId && other.period == period;
+
+  @override
+  int get hashCode => Object.hash(studentId, period);
+}
+
+final reportCardProvider = FutureProvider.autoDispose.family<ReportCard, ReportCardQuery>((ref, query) {
+  return ref.watch(schoolRepositoryProvider).getReportCard(query.studentId, query.period);
 });

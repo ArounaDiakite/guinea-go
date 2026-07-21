@@ -185,6 +185,11 @@ class _StudentCard extends StatelessWidget {
               ],
             ),
           ),
+          IconButton(
+            tooltip: 'Notes',
+            icon: const Icon(Icons.grade_outlined, color: AppColors.textSecondary),
+            onPressed: () => context.push('/hub/school/students/${student.id}/grades', extra: institutionId),
+          ),
           const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
         ],
       ),
