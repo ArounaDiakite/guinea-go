@@ -19,9 +19,49 @@ its city), and a child entity whose currency_id is inherited from its
 parent's already-migrated country_id.
 """
 
+import random
+import string
+
 from bson import ObjectId
 
 from app.database.mongodb import db
+
+# Same alphabet/length as Teacher/StudentService's own invite-code
+# generation (transport/tickets/service.py's collision-retry style) -
+# duplicated here rather than imported, since this module intentionally
+# never imports application services, only touches raw collections.
+_INVITE_CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+_INVITE_CODE_LENGTH = 8
+
+
+def _generate_invite_code() -> str:
+    return "".join(random.choices(_INVITE_CODE_ALPHABET, k=_INVITE_CODE_LENGTH))
+
+
+async def _backfill_invite_code(collection):
+    """Teacher/Student documents created before invite_code existed
+    have it missing or null, which collides under the unique index
+    (database/indexes.py) the moment more than one such document
+    exists - backfills each with a fresh, real code. Must run before
+    create_indexes() (see backfill_legacy_invite_codes below), unlike
+    every other migration in this module, which runs after it - the
+    unique index build itself is what fails on the pre-existing nulls,
+    so there's nothing to migrate into once that's already thrown."""
+    cursor = collection.find({"$or": [{"invite_code": {"$exists": False}}, {"invite_code": None}]})
+
+    async for doc in cursor:
+        code = _generate_invite_code()
+        for _ in range(3):
+            if not await collection.find_one({"invite_code": code}):
+                break
+            code = _generate_invite_code()
+
+        await collection.update_one({"_id": doc["_id"]}, {"$set": {"invite_code": code}})
+
+
+async def backfill_legacy_invite_codes():
+    await _backfill_invite_code(db.teachers)
+    await _backfill_invite_code(db.students)
 
 
 async def _resolve_country_and_city(country_code: str, city_name: str | None):
