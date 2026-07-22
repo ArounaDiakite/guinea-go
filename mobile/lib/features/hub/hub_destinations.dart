@@ -182,12 +182,46 @@ const List<HubDestination> _schoolAdministratorDestinations = [
   ),
 ];
 
+const List<HubDestination> _teacherDestinations = [
+  HubDestination(
+    branchIndex: 13,
+    path: '/hub/teacher',
+    label: 'Mes classes',
+    icon: Icons.class_outlined,
+    selectedIcon: Icons.class_rounded,
+  ),
+  HubDestination(
+    branchIndex: 6,
+    path: '/hub/profile',
+    label: 'Profil',
+    icon: Icons.person_outline_rounded,
+    selectedIcon: Icons.person_rounded,
+  ),
+];
+
+const List<HubDestination> _studentDestinations = [
+  HubDestination(
+    branchIndex: 14,
+    path: '/hub/student',
+    label: 'Mon espace',
+    icon: Icons.backpack_outlined,
+    selectedIcon: Icons.backpack_rounded,
+  ),
+  HubDestination(
+    branchIndex: 6,
+    path: '/hub/profile',
+    label: 'Profil',
+    icon: Icons.person_outline_rounded,
+    selectedIcon: Icons.person_rounded,
+  ),
+];
+
 /// Source of truth for UserRole values: backend/app/core/constants.py.
-/// Only `driver`, `company_owner`, `hotel_owner`, `event_organizer`,
-/// `store_manager` and `school_administrator` get a distinct nav set
-/// today - every other role (including passenger) falls back to the
-/// passenger tab set, since no other role has a dedicated hub
-/// experience yet.
+/// `driver`, `company_owner`, `hotel_owner`, `event_organizer`,
+/// `store_manager`, `school_administrator`, `teacher` and `student` get
+/// a distinct nav set - every other role (including passenger) falls
+/// back to the passenger tab set, since no other role has a dedicated
+/// hub experience yet.
 List<HubDestination> hubDestinationsForRole(String? role) {
   return switch (role) {
     'driver' => _driverDestinations,
@@ -196,6 +230,8 @@ List<HubDestination> hubDestinationsForRole(String? role) {
     'event_organizer' => _eventOrganizerDestinations,
     'store_manager' => _storeManagerDestinations,
     'school_administrator' => _schoolAdministratorDestinations,
+    'teacher' => _teacherDestinations,
+    'student' => _studentDestinations,
     _ => _passengerDestinations,
   };
 }
@@ -222,6 +258,8 @@ String landingRouteForRole(String? role) {
     'event_organizer' => '/hub/organizer',
     'store_manager' => '/hub/store',
     'school_administrator' => '/hub/school',
+    'teacher' => '/hub/teacher',
+    'student' => '/hub/student',
     _ => '/hub/home',
   };
 }

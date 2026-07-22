@@ -70,6 +70,33 @@ class AuthController extends AsyncNotifier<User?> {
     }
   }
 
+  Future<void> registerSchoolMember({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String phone,
+    required String password,
+    required String city,
+    required String inviteCode,
+  }) async {
+    try {
+      final session = await ref.read(authRepositoryProvider).registerSchoolMember(
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        phone: phone,
+        password: password,
+        city: city,
+        inviteCode: inviteCode,
+      );
+      await TokenStorage.saveAccessToken(session.accessToken);
+      state = AsyncData(session.user);
+    } catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      rethrow;
+    }
+  }
+
   Future<void> logout() async {
     await TokenStorage.clear();
     state = const AsyncData(null);

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_error.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/widgets/app_button.dart';
@@ -191,6 +193,13 @@ class _StudentFormState extends ConsumerState<_StudentForm> {
                         AppErrorBanner(message: _errorMessage!),
                         const SizedBox(height: AppSpacing.md),
                       ],
+                      if (widget.existingStudent != null) ...[
+                        _InviteCodeCard(
+                          inviteCode: widget.existingStudent!.inviteCode,
+                          isClaimed: widget.existingStudent!.userId != null,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
                       AppTextField(
                         controller: _firstNameController,
                         label: 'Prénom',
@@ -278,6 +287,62 @@ class _StudentFormState extends ConsumerState<_StudentForm> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// See TeacherFormScreen's identical _InviteCodeCard for the rationale
+/// (stays visible once claimed; userId marks it used, not the code
+/// changing) - duplicated per screen rather than shared, matching this
+/// module's existing per-entity duplication convention.
+class _InviteCodeCard extends StatelessWidget {
+  const _InviteCodeCard({required this.inviteCode, required this.isClaimed});
+
+  final String inviteCode;
+  final bool isClaimed;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Code d\'invitation', style: textTheme.labelMedium),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  inviteCode,
+                  style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 1.5),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  isClaimed ? 'Compte déjà activé avec ce code.' : 'Compte pas encore activé.',
+                  style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Copier le code',
+            icon: const Icon(Icons.copy_rounded),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: inviteCode));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Code copié.')),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

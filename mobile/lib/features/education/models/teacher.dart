@@ -8,6 +8,8 @@ class Teacher {
     required this.phone,
     this.subject,
     required this.academicUnitIds,
+    required this.inviteCode,
+    this.userId,
     required this.isActive,
   });
 
@@ -19,6 +21,11 @@ class Teacher {
   final String phone;
   final String? subject;
   final List<String> academicUnitIds;
+  // Self-registration code (POST /auth/register-school-member) - stays
+  // visible on the profile even once claimed; userId != null is what
+  // actually marks it used, not the code disappearing.
+  final String inviteCode;
+  final String? userId;
   final bool isActive;
 
   String get fullName => '$firstName $lastName';
@@ -33,6 +40,8 @@ class Teacher {
       phone: json['phone'] as String,
       subject: json['subject'] as String?,
       academicUnitIds: (json['academic_unit_ids'] as List<dynamic>).cast<String>(),
+      inviteCode: json['invite_code'] as String,
+      userId: json['user_id'] as String?,
       isActive: json['is_active'] as bool,
     );
   }

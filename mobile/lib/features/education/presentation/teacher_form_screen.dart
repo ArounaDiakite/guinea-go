@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -164,6 +165,13 @@ class _TeacherFormState extends ConsumerState<_TeacherForm> {
                         AppErrorBanner(message: _errorMessage!),
                         const SizedBox(height: AppSpacing.md),
                       ],
+                      if (widget.existingTeacher != null) ...[
+                        _InviteCodeCard(
+                          inviteCode: widget.existingTeacher!.inviteCode,
+                          isClaimed: widget.existingTeacher!.userId != null,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
                       AppTextField(
                         controller: _firstNameController,
                         label: 'Prénom',
@@ -253,6 +261,64 @@ class _TeacherFormState extends ConsumerState<_TeacherForm> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Displays the self-registration code (POST /auth/register-school-
+/// member) an enseignant uses to activate their own account - shown
+/// on the edit form since it's set once at creation and never
+/// regenerated. Stays visible after the code is claimed (userId !=
+/// null on the Teacher) since the code itself doesn't change; only a
+/// status label reflects that it's already in use.
+class _InviteCodeCard extends StatelessWidget {
+  const _InviteCodeCard({required this.inviteCode, required this.isClaimed});
+
+  final String inviteCode;
+  final bool isClaimed;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Code d\'invitation', style: textTheme.labelMedium),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  inviteCode,
+                  style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 1.5),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  isClaimed ? 'Compte déjà activé avec ce code.' : 'Compte pas encore activé.',
+                  style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Copier le code',
+            icon: const Icon(Icons.copy_rounded),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: inviteCode));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Code copié.')),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

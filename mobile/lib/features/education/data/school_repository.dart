@@ -128,6 +128,14 @@ class SchoolRepository {
     return Teacher.fromJson(response.data!);
   }
 
+  /// The logged-in teacher's own profile (GET /teachers/me) - resolves
+  /// their institution_id/academic_unit_ids for the teacher hub, same
+  /// way getMyInstitution resolves a school_administrator's institution.
+  Future<Teacher> getMyTeacherProfile() async {
+    final response = await _dio.get<Map<String, dynamic>>('/teachers/me');
+    return Teacher.fromJson(response.data!);
+  }
+
   Future<Teacher> createTeacher({
     required String institutionId,
     required String firstName,
@@ -192,6 +200,13 @@ class SchoolRepository {
 
   Future<Student> getStudent(String studentId) async {
     final response = await _dio.get<Map<String, dynamic>>('/students/$studentId');
+    return Student.fromJson(response.data!);
+  }
+
+  /// The logged-in student's own profile (GET /students/me) - same
+  /// role as getMyTeacherProfile, for the student hub.
+  Future<Student> getMyStudentProfile() async {
+    final response = await _dio.get<Map<String, dynamic>>('/students/me');
     return Student.fromJson(response.data!);
   }
 
@@ -363,6 +378,14 @@ class SchoolRepository {
       '/timeslots/$timeSlotId/attendance',
       data: {'date': _isoDate(date), 'entries': _attendanceEntries(statuses)},
     );
+    return response.data!.map((json) => AttendanceRecord.fromJson(json as Map<String, dynamic>)).toList();
+  }
+
+  /// A student's (or, for school_administrator/teacher, a given
+  /// student's) recorded attendance history - GET /students/{id}/
+  /// attendance, most recent first (see backend's get_by_student sort).
+  Future<List<AttendanceRecord>> getStudentAttendance(String studentId) async {
+    final response = await _dio.get<List<dynamic>>('/students/$studentId/attendance', queryParameters: {'limit': 200});
     return response.data!.map((json) => AttendanceRecord.fromJson(json as Map<String, dynamic>)).toList();
   }
 

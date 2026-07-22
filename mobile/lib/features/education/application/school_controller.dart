@@ -4,6 +4,7 @@ import '../../../core/models/city.dart';
 import '../../../core/models/country.dart';
 import '../data/school_repository.dart';
 import '../models/academic_unit.dart';
+import '../models/attendance.dart';
 import '../models/fee_schedule.dart';
 import '../models/grade.dart';
 import '../models/institution.dart';
@@ -47,6 +48,14 @@ final teacherDetailProvider = FutureProvider.autoDispose.family<Teacher, String>
   return ref.watch(schoolRepositoryProvider).getTeacher(teacherId);
 });
 
+final myTeacherProfileProvider = FutureProvider.autoDispose<Teacher>((ref) {
+  return ref.watch(schoolRepositoryProvider).getMyTeacherProfile();
+});
+
+final myStudentProfileProvider = FutureProvider.autoDispose<Student>((ref) {
+  return ref.watch(schoolRepositoryProvider).getMyStudentProfile();
+});
+
 class StudentListQuery {
   const StudentListQuery({required this.institutionId, this.academicUnitId});
 
@@ -69,6 +78,13 @@ final studentsProvider = FutureProvider.autoDispose.family<List<Student>, Studen
 
 final studentDetailProvider = FutureProvider.autoDispose.family<Student, String>((ref, studentId) {
   return ref.watch(schoolRepositoryProvider).getStudent(studentId);
+});
+
+final studentAttendanceProvider = FutureProvider.autoDispose.family<List<AttendanceRecord>, String>((
+  ref,
+  studentId,
+) {
+  return ref.watch(schoolRepositoryProvider).getStudentAttendance(studentId);
 });
 
 final subjectsProvider = FutureProvider.autoDispose.family<List<Subject>, String>((ref, institutionId) {

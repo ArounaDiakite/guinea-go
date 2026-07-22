@@ -58,6 +58,37 @@ class AuthRepository {
     );
     return AuthSession.fromJson(response.data!);
   }
+
+  /// Self-registration for a school_administrator-created Teacher/
+  /// Student profile (POST /auth/register-school-member) - the
+  /// invite_code identifies which profile (and its role) to claim;
+  /// same TokenResponse-shaped body as register(), plus an ignored
+  /// profile_id AuthSession.fromJson doesn't need.
+  Future<AuthSession> registerSchoolMember({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String phone,
+    required String password,
+    required String city,
+    required String inviteCode,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/auth/register-school-member',
+      data: {
+        'first_name': firstName,
+        'last_name': lastName,
+        'email': email,
+        'phone': phone,
+        'password': password,
+        'city': city,
+        'country_code': 'GN',
+        'preferred_language': 'fr',
+        'invite_code': inviteCode,
+      },
+    );
+    return AuthSession.fromJson(response.data!);
+  }
 }
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {

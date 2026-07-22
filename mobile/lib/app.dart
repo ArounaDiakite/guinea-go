@@ -60,12 +60,19 @@ import 'features/education/presentation/grade_form_screen.dart';
 import 'features/education/presentation/grade_list_screen.dart';
 import 'features/education/presentation/institution_home_screen.dart';
 import 'features/education/presentation/report_card_screen.dart';
+import 'features/education/presentation/student_attendance_screen.dart';
 import 'features/education/presentation/student_fees_screen.dart';
+import 'features/education/presentation/student_fees_view_screen.dart';
 import 'features/education/presentation/student_form_screen.dart';
+import 'features/education/presentation/student_grades_screen.dart';
+import 'features/education/presentation/student_home_screen.dart';
 import 'features/education/presentation/student_list_screen.dart';
+import 'features/education/presentation/student_schedule_screen.dart';
 import 'features/education/presentation/subject_form_screen.dart';
 import 'features/education/presentation/subject_list_screen.dart';
+import 'features/education/presentation/teacher_class_screen.dart';
 import 'features/education/presentation/teacher_form_screen.dart';
+import 'features/education/presentation/teacher_home_screen.dart';
 import 'features/education/presentation/teacher_list_screen.dart';
 import 'features/education/presentation/timeslot_form_screen.dart';
 import 'features/hub/presentation/home_hub_screen.dart';
@@ -74,6 +81,7 @@ import 'features/hub/presentation/module_placeholder_screen.dart';
 import 'features/hub/presentation/profile_screen.dart';
 import 'features/identity/application/auth_controller.dart';
 import 'features/identity/presentation/login_screen.dart';
+import 'features/identity/presentation/register_school_member_screen.dart';
 import 'features/identity/presentation/register_screen.dart';
 import 'features/payments/models/payment.dart';
 import 'features/payments/presentation/payment_screen.dart';
@@ -143,6 +151,10 @@ final List<RouteBase> _routes = [
     GoRoute(
       path: '/register',
       builder: (context, state) => const RegisterScreen(),
+    ),
+    GoRoute(
+      path: '/register-school-member',
+      builder: (context, state) => const RegisterSchoolMemberScreen(),
     ),
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) => HubScaffold(navigationShell: navigationShell),
@@ -731,6 +743,79 @@ final List<RouteBase> _routes = [
                       ),
                     ),
                   ],
+                ),
+              ],
+            ),
+          ],
+        ),
+        // branchIndex 13 in hub_destinations.dart - teacher-only. A
+        // teacher's own classes come from GET /teachers/me's
+        // academic_unit_ids (TeacherHomeScreen), not a path param -
+        // same "resolve the caller's own scope first" shape as /hub/
+        // school above, just via the teacher's own profile instead of
+        // an owned Institution.
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/hub/teacher',
+              builder: (context, state) => const TeacherHomeScreen(),
+              routes: [
+                GoRoute(
+                  path: 'classes/:academicUnitId',
+                  builder: (context, state) {
+                    final extra = state.extra as Map<String, String>;
+                    return TeacherClassScreen(
+                      institutionId: extra['institutionId']!,
+                      teacherId: extra['teacherId']!,
+                      academicUnitId: state.pathParameters['academicUnitId']!,
+                    );
+                  },
+                  routes: [
+                    GoRoute(
+                      path: 'timeslots/:timeSlotId/attendance',
+                      builder: (context, state) => AttendanceEntryScreen(
+                        institutionId: state.extra as String,
+                        academicUnitId: state.pathParameters['academicUnitId']!,
+                        timeSlotId: state.pathParameters['timeSlotId']!,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+        // branchIndex 14 in hub_destinations.dart - student-only. Every
+        // sub-route resolves the logged-in student's own id/academic
+        // unit up front (StudentHomeScreen, via GET /students/me) and
+        // passes it on via extra/path param - nothing here is browsable
+        // by id the way the school_administrator's screens are, since
+        // a student only ever has permission to see their own records.
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/hub/student',
+              builder: (context, state) => const StudentHomeScreen(),
+              routes: [
+                GoRoute(
+                  path: 'schedule',
+                  builder: (context, state) => StudentScheduleScreen(academicUnitId: state.extra as String),
+                ),
+                GoRoute(
+                  path: 'grades',
+                  builder: (context, state) => StudentGradesScreen(studentId: state.extra as String),
+                ),
+                GoRoute(
+                  path: 'report-card',
+                  builder: (context, state) => ReportCardScreen(studentId: state.extra as String),
+                ),
+                GoRoute(
+                  path: 'attendance',
+                  builder: (context, state) => StudentAttendanceScreen(studentId: state.extra as String),
+                ),
+                GoRoute(
+                  path: 'fees',
+                  builder: (context, state) => StudentFeesViewScreen(studentId: state.extra as String),
                 ),
               ],
             ),

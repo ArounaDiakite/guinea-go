@@ -8,6 +8,8 @@ class Student {
     this.dateOfBirth,
     this.guardianName,
     this.guardianPhone,
+    required this.inviteCode,
+    this.userId,
     required this.isActive,
   });
 
@@ -19,6 +21,10 @@ class Student {
   final DateTime? dateOfBirth;
   final String? guardianName;
   final String? guardianPhone;
+  // Self-registration code (POST /auth/register-school-member) - see
+  // Teacher.inviteCode for the same "stays visible once claimed" note.
+  final String inviteCode;
+  final String? userId;
   final bool isActive;
 
   String get fullName => '$firstName $lastName';
@@ -33,6 +39,8 @@ class Student {
       dateOfBirth: json['date_of_birth'] != null ? DateTime.parse(json['date_of_birth'] as String) : null,
       guardianName: json['guardian_name'] as String?,
       guardianPhone: json['guardian_phone'] as String?,
+      inviteCode: json['invite_code'] as String,
+      userId: json['user_id'] as String?,
       isActive: json['is_active'] as bool,
     );
   }
