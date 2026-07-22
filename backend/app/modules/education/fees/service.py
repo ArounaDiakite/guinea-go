@@ -2,6 +2,7 @@ from fastapi import HTTPException
 
 from app.common.base_model import BaseDocument
 from app.core.permissions import ensure_owner
+from app.modules.education.access import EducationAccess
 from app.modules.education.academic_units.repository import AcademicUnitRepository
 from app.modules.education.fees.repository import FeeScheduleRepository, StudentFeeRepository
 from app.modules.education.fees.schemas import FeeScheduleCreate, StudentFeeCreate
@@ -143,6 +144,7 @@ class StudentFeeService:
         self.student_repository = StudentRepository()
         self.institution_repository = InstitutionRepository()
         self.payment_repository = PaymentRepository()
+        self.access = EducationAccess()
 
     async def _get_owned_student(self, student_id: str, user_id: str):
         student = await self.student_repository.get_by_id(student_id)
@@ -204,8 +206,13 @@ class StudentFeeService:
         student_fee = await self.repository.create(student_fee)
         return await self._format(student_fee)
 
-    async def get_student_fees(self, student_id: str, user_id: str):
-        await self._get_owned_student(student_id, user_id)
+    async def get_student_fees(self, student_id: str, user_id: str, role: str):
+        student = await self.student_repository.get_by_id(student_id)
+
+        if not student:
+            raise HTTPException(status_code=404, detail="Student not found.")
+
+        await self.access.ensure_can_view_own_student_record(student, user_id, role)
 
         fees = await self.repository.get_by_student(student_id)
         return [await self._format(fee) for fee in fees]

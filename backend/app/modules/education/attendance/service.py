@@ -3,7 +3,9 @@ from datetime import datetime, time
 from fastapi import HTTPException, status
 
 from app.common.base_model import BaseDocument
+from app.core.constants import UserRole
 from app.core.permissions import ensure_owner
+from app.modules.education.access import EducationAccess
 from app.modules.education.academic_units.repository import AcademicUnitRepository
 from app.modules.education.attendance.repository import AttendanceRepository
 from app.modules.education.attendance.schemas import AttendanceSubmit
@@ -19,12 +21,19 @@ class AttendanceService:
         self.academic_unit_repository = AcademicUnitRepository()
         self.institution_repository = InstitutionRepository()
         self.student_repository = StudentRepository()
+        self.access = EducationAccess()
 
-    async def _get_owned_timeslot(self, timeslot_id: str, user_id: str):
+    async def _get_owned_timeslot(self, timeslot_id: str, user_id: str, role: str):
+        """school_administrator who owns the institution, or a teacher
+        assigned to this time slot (attendance:manage_own)."""
         timeslot = await self.timeslot_repository.get_by_id(timeslot_id)
 
         if not timeslot:
             raise HTTPException(status_code=404, detail="Time slot not found.")
+
+        if role == UserRole.TEACHER:
+            await self.access.ensure_teacher_owns_timeslot(timeslot, user_id)
+            return timeslot
 
         academic_unit = await self.academic_unit_repository.get_by_id(
             timeslot["academic_unit_id"]
@@ -42,20 +51,6 @@ class AttendanceService:
 
         ensure_owner(institution["administrator_id"], user_id)
         return timeslot
-
-    async def _get_owned_student(self, student_id: str, user_id: str):
-        student = await self.student_repository.get_by_id(student_id)
-
-        if not student:
-            raise HTTPException(status_code=404, detail="Student not found.")
-
-        institution = await self.institution_repository.get_by_id(student["institution_id"])
-
-        if not institution:
-            raise HTTPException(status_code=403, detail="Not allowed.")
-
-        ensure_owner(institution["administrator_id"], user_id)
-        return student
 
     async def _validate_entries(self, timeslot: dict, data: AttendanceSubmit):
         for entry in data.entries:
@@ -75,8 +70,10 @@ class AttendanceService:
                     ),
                 )
 
-    async def submit_attendance(self, timeslot_id: str, data: AttendanceSubmit, user_id: str):
-        timeslot = await self._get_owned_timeslot(timeslot_id, user_id)
+    async def submit_attendance(
+        self, timeslot_id: str, data: AttendanceSubmit, user_id: str, role: str
+    ):
+        timeslot = await self._get_owned_timeslot(timeslot_id, user_id, role)
         await self._validate_entries(timeslot, data)
 
         record_date = datetime.combine(data.date, time.min)
@@ -116,8 +113,10 @@ class AttendanceService:
 
         return [self._format(record) for record in created]
 
-    async def update_attendance(self, timeslot_id: str, data: AttendanceSubmit, user_id: str):
-        timeslot = await self._get_owned_timeslot(timeslot_id, user_id)
+    async def update_attendance(
+        self, timeslot_id: str, data: AttendanceSubmit, user_id: str, role: str
+    ):
+        timeslot = await self._get_owned_timeslot(timeslot_id, user_id, role)
         await self._validate_entries(timeslot, data)
 
         record_date = datetime.combine(data.date, time.min)
@@ -155,9 +154,14 @@ class AttendanceService:
         return [self._format(record) for record in results]
 
     async def get_student_attendance(
-        self, student_id: str, user_id: str, page: int, limit: int
+        self, student_id: str, user_id: str, page: int, limit: int, role: str
     ):
-        await self._get_owned_student(student_id, user_id)
+        student = await self.student_repository.get_by_id(student_id)
+
+        if not student:
+            raise HTTPException(status_code=404, detail="Student not found.")
+
+        await self.access.ensure_can_view_own_student_record(student, user_id, role)
 
         records = await self.repository.get_by_student(student_id, page, limit)
         return [self._format(record) for record in records]

@@ -25,6 +25,10 @@ class StudentResponse(BaseModel):
     date_of_birth: Optional[date] = None
     guardian_name: Optional[str] = None
     guardian_phone: Optional[str] = None
+    # Generated once at creation, never regenerated - see Teacher's
+    # identical invite_code for the rationale (still shown once claimed).
+    invite_code: str
+    user_id: Optional[str] = None
     is_active: bool
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

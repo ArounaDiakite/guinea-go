@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 
 from app.common.base_model import BaseDocument
 from app.core.permissions import ensure_owner
+from app.modules.education.access import EducationAccess
 from app.modules.education.academic_units.repository import AcademicUnitRepository
 from app.modules.education.institutions.repository import InstitutionRepository
 from app.modules.education.subjects.repository import SubjectRepository
@@ -24,6 +25,7 @@ class TimeSlotService:
         self.institution_repository = InstitutionRepository()
         self.subject_repository = SubjectRepository()
         self.teacher_repository = TeacherRepository()
+        self.access = EducationAccess()
 
     async def _get_owned_academic_unit(self, academic_unit_id: str, user_id: str):
         academic_unit = await self.academic_unit_repository.get_by_id(academic_unit_id)
@@ -167,8 +169,13 @@ class TimeSlotService:
 
         return {"message": "Time slot deleted successfully."}
 
-    async def get_schedule(self, academic_unit_id: str, user_id: str):
-        await self._get_owned_academic_unit(academic_unit_id, user_id)
+    async def get_schedule(self, academic_unit_id: str, user_id: str, role: str):
+        academic_unit = await self.academic_unit_repository.get_by_id(academic_unit_id)
+
+        if not academic_unit:
+            raise HTTPException(status_code=404, detail="Academic unit not found.")
+
+        await self.access.ensure_can_view_academic_unit(academic_unit, user_id, role)
 
         timeslots = await self.repository.get_by_academic_unit(academic_unit_id)
 

@@ -63,6 +63,27 @@ ROLE_PERMISSIONS: dict[UserRole, set[str]] = {
         "invoices:manage",
         "reports:generate",
     },
+    # Self-registers via invite code (POST /auth/register-school-member)
+    # rather than school_administrator:manage - a teacher only manages
+    # attendance for the timeslots actually assigned to them (checked in
+    # AttendanceService, not expressible as a bare permission string),
+    # everything else here is read-only.
+    UserRole.TEACHER: {
+        "academic_units:view_own",
+        "students:view_own",
+        "timeslots:view_own",
+        "attendance:manage_own",
+        "grades:view_own",
+    },
+    # Same self-registration path as teacher. Entirely read-only - a
+    # student has no write permission anywhere in this app.
+    UserRole.STUDENT: {
+        "timeslots:view_self",
+        "grades:view_self",
+        "report_card:view_self",
+        "attendance:view_self",
+        "fees:view_self",
+    },
     UserRole.SYSTEM_ADMINISTRATOR: {ALL_PERMISSIONS},
 }
 

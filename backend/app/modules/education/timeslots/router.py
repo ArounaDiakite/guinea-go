@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from app.core.dependencies import get_current_user, require_permission
+from app.core.dependencies import get_current_user, require_any_permission, require_permission
 from app.modules.education.attendance.schemas import (
     AttendanceRecordResponse,
     AttendanceSubmit,
@@ -55,15 +55,19 @@ async def delete_timeslot(
 async def submit_attendance(
     timeslot_id: str,
     data: AttendanceSubmit,
-    current_user=Depends(require_permission("attendance:manage")),
+    current_user=Depends(require_any_permission("attendance:manage", "attendance:manage_own")),
 ):
-    return await attendance_service.submit_attendance(timeslot_id, data, current_user["sub"])
+    return await attendance_service.submit_attendance(
+        timeslot_id, data, current_user["sub"], current_user["role"]
+    )
 
 
 @router.put("/{timeslot_id}/attendance", response_model=list[AttendanceRecordResponse])
 async def correct_attendance(
     timeslot_id: str,
     data: AttendanceSubmit,
-    current_user=Depends(require_permission("attendance:manage")),
+    current_user=Depends(require_any_permission("attendance:manage", "attendance:manage_own")),
 ):
-    return await attendance_service.update_attendance(timeslot_id, data, current_user["sub"])
+    return await attendance_service.update_attendance(
+        timeslot_id, data, current_user["sub"], current_user["role"]
+    )

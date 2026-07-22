@@ -41,7 +41,9 @@ async def get_academic_unit(
     academic_unit_id: str,
     current_user=Depends(get_current_user),
 ):
-    return await service.get_academic_unit(academic_unit_id, current_user["sub"])
+    return await service.get_academic_unit(
+        academic_unit_id, current_user["sub"], current_user["role"]
+    )
 
 
 @router.get("/{academic_unit_id}/schedule", response_model=list[ScheduleItemResponse])
@@ -49,7 +51,9 @@ async def get_academic_unit_schedule(
     academic_unit_id: str,
     current_user=Depends(get_current_user),
 ):
-    return await timeslot_service.get_schedule(academic_unit_id, current_user["sub"])
+    return await timeslot_service.get_schedule(
+        academic_unit_id, current_user["sub"], current_user["role"]
+    )
 
 
 @router.put("/{academic_unit_id}", response_model=AcademicUnitResponse)

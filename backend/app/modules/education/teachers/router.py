@@ -35,6 +35,11 @@ async def get_teachers(
     )
 
 
+@router.get("/me", response_model=TeacherResponse)
+async def get_my_teacher_profile(current_user=Depends(get_current_user)):
+    return await service.get_my_teacher_profile(current_user["sub"])
+
+
 @router.get("/{teacher_id}", response_model=TeacherResponse)
 async def get_teacher(
     teacher_id: str,

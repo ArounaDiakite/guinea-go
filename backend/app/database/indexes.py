@@ -123,6 +123,27 @@ async def create_indexes():
     await db.students.create_index("institution_id")
     await db.students.create_index("academic_unit_id")
 
+    # Teacher/Student invite codes: unique per collision-retry generation
+    # (TeacherService/StudentService._unique_invite_code), scoped to
+    # non-deleted documents only - same partialFilterExpression reasoning
+    # as institutions.administrator_id above. user_id is unique once
+    # claimed (school_members/service.py's single-use registration) but
+    # starts out None for every profile, so the partial filter restricts
+    # the constraint to documents where it's actually been set to a
+    # string - $ne isn't allowed in a partial index filter, $type is.
+    await db.teachers.create_index(
+        "invite_code", unique=True, partialFilterExpression={"is_deleted": False}
+    )
+    await db.teachers.create_index(
+        "user_id", unique=True, partialFilterExpression={"user_id": {"$type": "string"}}
+    )
+    await db.students.create_index(
+        "invite_code", unique=True, partialFilterExpression={"is_deleted": False}
+    )
+    await db.students.create_index(
+        "user_id", unique=True, partialFilterExpression={"user_id": {"$type": "string"}}
+    )
+
     # Subjects / TimeSlots - fields filtered/queried on in get_by_
     # institution()/get_by_academic_unit()/has_overlap(). The compound
     # indexes match has_overlap()'s query shape exactly (field + day_of_

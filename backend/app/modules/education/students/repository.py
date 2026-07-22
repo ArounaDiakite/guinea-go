@@ -1,5 +1,6 @@
 from bson import ObjectId
 
+from app.common.base_model import now
 from app.database.mongodb import db
 
 
@@ -18,6 +19,22 @@ class StudentRepository:
         return await self.collection.find_one(
             {"_id": ObjectId(student_id), "is_deleted": False}
         )
+
+    async def get_by_invite_code(self, invite_code: str):
+        return await self.collection.find_one({"invite_code": invite_code, "is_deleted": False})
+
+    async def get_by_user_id(self, user_id: str):
+        return await self.collection.find_one({"user_id": user_id, "is_deleted": False})
+
+    async def claim_invite_code(self, student_id: str, user_id: str, session=None) -> bool:
+        """See TeacherRepository.claim_invite_code - same atomic,
+        single-use claim pattern."""
+        result = await self.collection.update_one(
+            {"_id": ObjectId(student_id), "user_id": None},
+            {"$set": {"user_id": user_id, "updated_at": now()}},
+            session=session,
+        )
+        return result.modified_count > 0
 
     async def get_by_institution(
         self,

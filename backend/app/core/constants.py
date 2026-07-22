@@ -10,6 +10,8 @@ class UserRole(str, Enum):
     SCHOOL_ADMINISTRATOR = "school_administrator"
     STORE_MANAGER = "store_manager"
     SYSTEM_ADMINISTRATOR = "system_administrator"
+    TEACHER = "teacher"
+    STUDENT = "student"
 
 
 # Roles that self-register via POST /auth/register-partner and require

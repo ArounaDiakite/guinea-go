@@ -157,6 +157,51 @@ class AuthService:
 
         return self._format_user(user)
 
+    async def register_role(
+        self, role: UserRole, data: RegisterRequest, is_active: bool, session=None
+    ):
+        """Generic version of register_driver/register_institution_administrator
+        - used by school member self-registration (teacher/student), where
+        the role is picked dynamically based on which invite code matched."""
+        existing_user = await self.repository.get_user_by_email(data.email, session=session)
+
+        if existing_user:
+            raise EmailAlreadyExistsException()
+
+        user_data = data.model_dump()
+
+        user_data["password"] = hash_password(data.password)
+
+        user_data["role"] = role
+        user_data["is_active"] = is_active
+        user_data["is_verified"] = False
+        user_data["profile_picture"] = None
+
+        user_data["country_code"] = data.country_code.upper()
+        user_data["preferred_language"] = data.preferred_language.lower()
+
+        user_data["created_at"] = utc_now()
+        user_data["updated_at"] = utc_now()
+        user_data["last_login"] = None
+
+        user = await self.repository.create_user(user_data, session=session)
+
+        return self._format_user(user)
+
+    def build_token(self, user_id: str, email: str, role: str) -> str:
+        """Used by self-registration flows that log the caller in
+        immediately (no admin validation step), where only the freshly
+        formatted user dict - not the raw Mongo document - is on hand."""
+        return create_access_token(
+            {
+                "sub": user_id,
+                "email": email,
+                "role": role,
+                "permissions": get_permissions_for_role(role),
+                "company_id": None,
+            }
+        )
+
     async def delete_account(self, user_id: str, session=None):
         """Rollback helper for orchestrated, cross-module account creation
         (e.g. companies/router.py creating a driver's auth account + business

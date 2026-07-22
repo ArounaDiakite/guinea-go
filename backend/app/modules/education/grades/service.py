@@ -2,6 +2,7 @@ from fastapi import HTTPException
 
 from app.common.base_model import BaseDocument
 from app.core.permissions import ensure_owner
+from app.modules.education.access import EducationAccess
 from app.modules.education.grades.repository import GradeRepository
 from app.modules.education.grades.schemas import GradeCreate
 from app.modules.education.institutions.repository import InstitutionRepository
@@ -15,8 +16,15 @@ class GradeService:
         self.student_repository = StudentRepository()
         self.institution_repository = InstitutionRepository()
         self.subject_repository = SubjectRepository()
+        self.access = EducationAccess()
 
     async def _get_owned_student(self, student_id: str, user_id: str):
+        """school_administrator only - used by the write paths
+        (add_grade/update_grade, gated by grades:manage, which only
+        school_administrator holds). Read paths use _get_student plus
+        EducationAccess.ensure_can_view_student_grades instead, which
+        also admits a teacher (grades:view_own) or the student
+        themselves (grades:view_self / report_card:view_self)."""
         student = await self.student_repository.get_by_id(student_id)
 
         if not student:
@@ -28,6 +36,15 @@ class GradeService:
             raise HTTPException(status_code=403, detail="Not allowed.")
 
         ensure_owner(institution["administrator_id"], user_id)
+        return student
+
+    async def _get_viewable_student(self, student_id: str, user_id: str, role: str):
+        student = await self.student_repository.get_by_id(student_id)
+
+        if not student:
+            raise HTTPException(status_code=404, detail="Student not found.")
+
+        await self.access.ensure_can_view_student_grades(student, user_id, role)
         return student
 
     async def _validate_subject(self, institution_id: str, subject_id: str):
@@ -54,8 +71,8 @@ class GradeService:
         grade = await self.repository.create(grade)
         return self._format(grade)
 
-    async def get_grades(self, student_id: str, user_id: str, period: str | None = None):
-        await self._get_owned_student(student_id, user_id)
+    async def get_grades(self, student_id: str, user_id: str, period: str | None, role: str):
+        await self._get_viewable_student(student_id, user_id, role)
 
         grades = await self.repository.get_by_student(student_id, period)
         return [self._format(grade) for grade in grades]
@@ -79,8 +96,8 @@ class GradeService:
         updated = await self.repository.update(grade_id, update_data)
         return self._format(updated)
 
-    async def get_report_card(self, student_id: str, user_id: str, period: str):
-        await self._get_owned_student(student_id, user_id)
+    async def get_report_card(self, student_id: str, user_id: str, period: str, role: str):
+        await self._get_viewable_student(student_id, user_id, role)
 
         grades = await self.repository.get_by_student(student_id, period)
 

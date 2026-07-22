@@ -14,6 +14,11 @@ from app.modules.education.institutions.schemas import (
     InstitutionWithAccountResponse,
 )
 from app.modules.education.institutions.service import InstitutionService
+from app.modules.education.school_members.schemas import (
+    SchoolMemberRegisterRequest,
+    SchoolMemberRegisterResponse,
+)
+from app.modules.education.school_members.service import SchoolMemberService
 
 router = APIRouter(
     prefix="/auth",
@@ -22,6 +27,7 @@ router = APIRouter(
 
 service = AuthService()
 institution_service = InstitutionService()
+school_member_service = SchoolMemberService()
 
 
 @router.get("/")
@@ -45,6 +51,11 @@ async def register_partner(data: RegisterPartnerRequest):
 @router.post("/register-institution", response_model=InstitutionWithAccountResponse)
 async def register_institution(data: InstitutionAccountCreate):
     return await institution_service.register_private_institution(data)
+
+
+@router.post("/register-school-member", response_model=SchoolMemberRegisterResponse)
+async def register_school_member(data: SchoolMemberRegisterRequest):
+    return await school_member_service.register(data)
 
 
 @router.post("/login", response_model=TokenResponse)

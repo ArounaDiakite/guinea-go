@@ -40,8 +40,13 @@ async def get_students(
     current_user=Depends(get_current_user),
 ):
     return await service.get_students(
-        institution_id, current_user["sub"], page, limit, academic_unit_id
+        institution_id, current_user["sub"], page, limit, academic_unit_id, current_user["role"]
     )
+
+
+@router.get("/me", response_model=StudentResponse)
+async def get_my_student_profile(current_user=Depends(get_current_user)):
+    return await service.get_my_student_profile(current_user["sub"])
 
 
 @router.get("/{student_id}", response_model=StudentResponse)
@@ -49,7 +54,7 @@ async def get_student(
     student_id: str,
     current_user=Depends(get_current_user),
 ):
-    return await service.get_student(student_id, current_user["sub"])
+    return await service.get_student(student_id, current_user["sub"], current_user["role"])
 
 
 @router.get("/{student_id}/attendance", response_model=list[AttendanceRecordResponse])
@@ -60,8 +65,9 @@ async def get_student_attendance(
     current_user=Depends(get_current_user),
 ):
     return await attendance_service.get_student_attendance(
-        student_id, current_user["sub"], page, limit
+        student_id, current_user["sub"], page, limit, current_user["role"]
     )
+
 
 
 @router.post("/{student_id}/grades", response_model=GradeResponse)
@@ -80,7 +86,7 @@ async def get_grades(
     current_user=Depends(get_current_user),
 ):
     return await grade_service.get_grades(
-        student_id, current_user["sub"], period.value if period else None
+        student_id, current_user["sub"], period.value if period else None, current_user["role"]
     )
 
 
@@ -100,7 +106,9 @@ async def get_report_card(
     period: Period,
     current_user=Depends(get_current_user),
 ):
-    return await grade_service.get_report_card(student_id, current_user["sub"], period.value)
+    return await grade_service.get_report_card(
+        student_id, current_user["sub"], period.value, current_user["role"]
+    )
 
 
 @router.post("/{student_id}/fees", response_model=StudentFeeResponse)
@@ -117,7 +125,9 @@ async def get_student_fees(
     student_id: str,
     current_user=Depends(get_current_user),
 ):
-    return await student_fee_service.get_student_fees(student_id, current_user["sub"])
+    return await student_fee_service.get_student_fees(
+        student_id, current_user["sub"], current_user["role"]
+    )
 
 
 @router.put("/{student_id}", response_model=StudentResponse)

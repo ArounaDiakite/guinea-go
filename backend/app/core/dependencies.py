@@ -69,3 +69,24 @@ def require_permission(permission: str):
         )
 
     return dependency
+
+
+def require_any_permission(*permissions: str):
+    """Dependency factory: restrict a route to callers holding at least
+    one of several permissions - e.g. a school_administrator with
+    attendance:manage or a teacher with attendance:manage_own, where the
+    fine-grained "is this actually their own time slot" check happens
+    downstream in the service."""
+
+    async def dependency(current_user: dict = Depends(get_current_user)):
+        role = current_user.get("role")
+
+        if any(role_has_permission(role, permission) for permission in permissions):
+            return current_user
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Missing required permission: one of {', '.join(permissions)}.",
+        )
+
+    return dependency

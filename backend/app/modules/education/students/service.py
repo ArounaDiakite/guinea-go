@@ -1,11 +1,24 @@
+import secrets
+
 from fastapi import HTTPException
 
 from app.common.base_model import BaseDocument
 from app.core.permissions import ensure_owner
+from app.modules.education.access import EducationAccess
 from app.modules.education.academic_units.repository import AcademicUnitRepository
 from app.modules.education.institutions.repository import InstitutionRepository
 from app.modules.education.students.repository import StudentRepository
 from app.modules.education.students.schemas import StudentCreate
+
+# Same style as Teacher's invite_code generation - see that file's
+# comment for the rationale (ambiguity-stripped alphabet, 8 chars,
+# collision-retry against the unique index).
+_CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+_CODE_LENGTH = 8
+
+
+def _generate_invite_code() -> str:
+    return "".join(secrets.choice(_CODE_ALPHABET) for _ in range(_CODE_LENGTH))
 
 
 class StudentService:
@@ -13,6 +26,15 @@ class StudentService:
         self.repository = StudentRepository()
         self.institution_repository = InstitutionRepository()
         self.academic_unit_repository = AcademicUnitRepository()
+        self.access = EducationAccess()
+
+    async def _unique_invite_code(self) -> str:
+        code = _generate_invite_code()
+        for _ in range(3):
+            if not await self.repository.get_by_invite_code(code):
+                break
+            code = _generate_invite_code()
+        return code
 
     async def _get_owned_institution(self, institution_id: str, user_id: str):
         institution = await self.institution_repository.get_by_id(institution_id)
@@ -41,6 +63,8 @@ class StudentService:
 
         student = data.model_dump()
         student.update(BaseDocument.create())
+        student["invite_code"] = await self._unique_invite_code()
+        student["user_id"] = None
 
         student = await self.repository.create(student)
         return self._format(student)
@@ -52,21 +76,30 @@ class StudentService:
         page: int,
         limit: int,
         academic_unit_id: str | None,
+        role: str,
     ):
-        await self._get_owned_institution(institution_id, user_id)
+        await self.access.ensure_can_list_students(institution_id, academic_unit_id, user_id, role)
 
         students = await self.repository.get_by_institution(
             institution_id, page, limit, academic_unit_id
         )
         return [self._format(student) for student in students]
 
-    async def get_student(self, student_id: str, user_id: str):
+    async def get_student(self, student_id: str, user_id: str, role: str):
         student = await self.repository.get_by_id(student_id)
 
         if not student:
             raise HTTPException(status_code=404, detail="Student not found.")
 
-        await self._get_owned_institution(student["institution_id"], user_id)
+        await self.access.ensure_can_view_student_profile(student, user_id, role)
+        return self._format(student)
+
+    async def get_my_student_profile(self, user_id: str):
+        student = await self.repository.get_by_user_id(user_id)
+
+        if not student:
+            raise HTTPException(status_code=404, detail="No student profile is linked to this account.")
+
         return self._format(student)
 
     async def update_student(self, student_id: str, data: StudentCreate, user_id: str):
@@ -123,6 +156,8 @@ class StudentService:
             "date_of_birth": student.get("date_of_birth"),
             "guardian_name": student.get("guardian_name"),
             "guardian_phone": student.get("guardian_phone"),
+            "invite_code": student["invite_code"],
+            "user_id": student.get("user_id"),
             "is_active": student["is_active"],
             "created_at": student.get("created_at"),
             "updated_at": student.get("updated_at"),
