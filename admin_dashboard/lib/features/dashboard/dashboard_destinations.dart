@@ -43,4 +43,11 @@ const List<AdminDestination> adminDestinations = [
     icon: Icons.school_outlined,
     selectedIcon: Icons.school_rounded,
   ),
+  AdminDestination(
+    branchIndex: 3,
+    path: '/reference-data',
+    label: 'Données de référence',
+    icon: Icons.public_outlined,
+    selectedIcon: Icons.public,
+  ),
 ];

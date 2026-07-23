@@ -11,6 +11,7 @@ import 'features/institutions/presentation/institution_create_screen.dart';
 import 'features/partners/models/pending_user.dart';
 import 'features/partners/presentation/partner_detail_screen.dart';
 import 'features/partners/presentation/partners_list_screen.dart';
+import 'features/reference_data/presentation/reference_data_screen.dart';
 
 /// Overridable in tests, same purpose as mobile/'s initialLocationProvider.
 final initialLocationProvider = Provider<String>((ref) => '/');
@@ -69,6 +70,14 @@ final List<RouteBase> _routes = [
           GoRoute(
             path: '/institutions/new',
             builder: (context, state) => const InstitutionCreateScreen(),
+          ),
+        ],
+      ),
+      StatefulShellBranch(
+        routes: [
+          GoRoute(
+            path: '/reference-data',
+            builder: (context, state) => const ReferenceDataScreen(),
           ),
         ],
       ),
