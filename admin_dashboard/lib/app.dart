@@ -7,6 +7,7 @@ import 'features/dashboard/presentation/admin_shell.dart';
 import 'features/dashboard/presentation/dashboard_home_screen.dart';
 import 'features/identity/application/auth_controller.dart';
 import 'features/identity/presentation/login_screen.dart';
+import 'features/institutions/presentation/institution_create_screen.dart';
 import 'features/partners/models/pending_user.dart';
 import 'features/partners/presentation/partner_detail_screen.dart';
 import 'features/partners/presentation/partners_list_screen.dart';
@@ -60,6 +61,14 @@ final List<RouteBase> _routes = [
                     PartnerDetailScreen(user: state.extra as PendingUser),
               ),
             ],
+          ),
+        ],
+      ),
+      StatefulShellBranch(
+        routes: [
+          GoRoute(
+            path: '/institutions/new',
+            builder: (context, state) => const InstitutionCreateScreen(),
           ),
         ],
       ),

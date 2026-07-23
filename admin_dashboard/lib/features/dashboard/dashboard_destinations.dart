@@ -36,4 +36,11 @@ const List<AdminDestination> adminDestinations = [
     icon: Icons.how_to_reg_outlined,
     selectedIcon: Icons.how_to_reg_rounded,
   ),
+  AdminDestination(
+    branchIndex: 2,
+    path: '/institutions/new',
+    label: 'Établissements',
+    icon: Icons.school_outlined,
+    selectedIcon: Icons.school_rounded,
+  ),
 ];
