@@ -29,4 +29,11 @@ const List<AdminDestination> adminDestinations = [
     icon: Icons.dashboard_outlined,
     selectedIcon: Icons.dashboard_rounded,
   ),
+  AdminDestination(
+    branchIndex: 1,
+    path: '/partners',
+    label: 'Partenaires',
+    icon: Icons.how_to_reg_outlined,
+    selectedIcon: Icons.how_to_reg_rounded,
+  ),
 ];

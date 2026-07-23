@@ -7,6 +7,9 @@ import 'features/dashboard/presentation/admin_shell.dart';
 import 'features/dashboard/presentation/dashboard_home_screen.dart';
 import 'features/identity/application/auth_controller.dart';
 import 'features/identity/presentation/login_screen.dart';
+import 'features/partners/models/pending_user.dart';
+import 'features/partners/presentation/partner_detail_screen.dart';
+import 'features/partners/presentation/partners_list_screen.dart';
 
 /// Overridable in tests, same purpose as mobile/'s initialLocationProvider.
 final initialLocationProvider = Provider<String>((ref) => '/');
@@ -43,6 +46,21 @@ final List<RouteBase> _routes = [
       StatefulShellBranch(
         routes: [
           GoRoute(path: '/', builder: (context, state) => const DashboardHomeScreen()),
+        ],
+      ),
+      StatefulShellBranch(
+        routes: [
+          GoRoute(
+            path: '/partners',
+            builder: (context, state) => const PartnersListScreen(),
+            routes: [
+              GoRoute(
+                path: ':userId',
+                builder: (context, state) =>
+                    PartnerDetailScreen(user: state.extra as PendingUser),
+              ),
+            ],
+          ),
         ],
       ),
     ],
