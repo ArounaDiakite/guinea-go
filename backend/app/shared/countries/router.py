@@ -15,8 +15,7 @@ service = CountryService()
 
 
 # Reference data: readable by anyone (GET below), writable only by a
-# system_administrator. No PUT/DELETE exist yet on this router - nothing
-# else to gate until those are actually added.
+# system_administrator.
 @router.post("/", response_model=CountryResponse)
 async def create_country(
     data: CountryCreate,
@@ -28,3 +27,20 @@ async def create_country(
 @router.get("/", response_model=List[CountryResponse])
 async def get_countries():
     return await service.get_all_countries()
+
+
+@router.put("/{country_id}", response_model=CountryResponse)
+async def update_country(
+    country_id: str,
+    data: CountryCreate,
+    current_user=Depends(require_role(UserRole.SYSTEM_ADMINISTRATOR)),
+):
+    return await service.update_country(country_id, data)
+
+
+@router.delete("/{country_id}")
+async def delete_country(
+    country_id: str,
+    current_user=Depends(require_role(UserRole.SYSTEM_ADMINISTRATOR)),
+):
+    return await service.delete_country(country_id)

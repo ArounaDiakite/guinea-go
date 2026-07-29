@@ -22,3 +22,17 @@ class CurrencyRepository:
 
     async def get_all(self):
         return await self.collection.find().sort("code", 1).to_list(length=100)
+
+    async def update(self, currency_id: str, data: dict):
+        await self.collection.update_one(
+            {"_id": ObjectId(currency_id)},
+            {"$set": data},
+        )
+        return await self.get_by_id(currency_id)
+
+    async def soft_delete(self, currency_id: str):
+        result = await self.collection.update_one(
+            {"_id": ObjectId(currency_id)},
+            {"$set": {"is_active": False}},
+        )
+        return result.modified_count > 0

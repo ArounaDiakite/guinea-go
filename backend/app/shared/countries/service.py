@@ -43,6 +43,45 @@ class CountryService:
         countries = await self.repository.get_all_countries()
         return [self._format_country(country) for country in countries]
 
+    async def update_country(self, country_id: str, data: CountryCreate):
+        country = await self.repository.get_by_id(country_id)
+
+        if not country:
+            raise HTTPException(status_code=404, detail="Country not found.")
+
+        existing_with_code = await self.repository.get_country_by_code(data.code)
+
+        if existing_with_code and str(existing_with_code["_id"]) != country_id:
+            raise HTTPException(status_code=400, detail="Country already exists.")
+
+        currency = await self.currency_repository.get_by_code(data.currency_code)
+
+        if not currency:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Currency '{data.currency_code}' does not exist. "
+                    "Create it via POST /currencies first."
+                ),
+            )
+
+        update_data = data.model_dump(exclude={"currency_code"})
+        update_data["code"] = data.code.upper()
+        update_data["currency_id"] = str(currency["_id"])
+        update_data["languages"] = [lang.lower() for lang in data.languages]
+
+        country = await self.repository.update(country_id, update_data)
+        return self._format_country(country)
+
+    async def delete_country(self, country_id: str):
+        country = await self.repository.get_by_id(country_id)
+
+        if not country:
+            raise HTTPException(status_code=404, detail="Country not found.")
+
+        await self.repository.soft_delete(country_id)
+        return {"message": "Country deleted successfully."}
+
     def _format_country(self, country):
         return {
             "id": str(country["_id"]),

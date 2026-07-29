@@ -27,6 +27,10 @@ class InstitutionRepository:
             "is_deleted": False,
         })
 
+    async def get_all(self):
+        cursor = self.collection.find({"is_deleted": False})
+        return await cursor.to_list(length=None)
+
     async def update(self, institution_id: str, data: dict):
         await self.collection.update_one(
             {"_id": ObjectId(institution_id), "is_deleted": False},

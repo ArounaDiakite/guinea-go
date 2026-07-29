@@ -6,6 +6,7 @@ from app.core.constants import UserRole
 from app.core.dependencies import require_role
 from app.modules.education.institutions.schemas import (
     InstitutionAccountCreate,
+    InstitutionResponse,
     InstitutionWithAccountResponse,
 )
 from app.modules.education.institutions.service import InstitutionService
@@ -40,3 +41,10 @@ async def create_institution(
     current_user=Depends(require_role(UserRole.SYSTEM_ADMINISTRATOR)),
 ):
     return await institution_service.create_public_institution(data)
+
+
+@router.get("/institutions", response_model=list[InstitutionResponse])
+async def get_institutions(
+    current_user=Depends(require_role(UserRole.SYSTEM_ADMINISTRATOR)),
+):
+    return await institution_service.get_all_institutions()

@@ -153,6 +153,16 @@ class InstitutionService:
 
         return self._format(institution)
 
+    async def get_all_institutions(self):
+        """GET /admin/institutions - system_administrator-only, no
+        ownership scoping (unlike get_my_institution/get_institution
+        above): every institution, public or private, active or
+        pending. Unbounded, same shape as AdminService.
+        get_pending_users - the institution count is small enough that
+        pagination isn't needed yet."""
+        institutions = await self.repository.get_all()
+        return [self._format(institution) for institution in institutions]
+
     async def get_institution(self, institution_id: str, user_id: str):
         institution = await self.repository.get_by_id(institution_id)
 

@@ -36,6 +36,32 @@ class CityService:
         cities = await self.repository.get_by_country(country_code)
         return [self._format(city) for city in cities]
 
+    async def update_city(self, city_id: str, data: CityCreate):
+        city = await self.repository.get_by_id(city_id)
+
+        if not city:
+            raise HTTPException(status_code=404, detail="City not found.")
+
+        existing = await self.repository.get_city(data.country_code, data.name)
+
+        if existing and str(existing["_id"]) != city_id:
+            raise HTTPException(status_code=400, detail="City already exists.")
+
+        update_data = data.model_dump()
+        update_data["country_code"] = data.country_code.upper()
+
+        city = await self.repository.update(city_id, update_data)
+        return self._format(city)
+
+    async def delete_city(self, city_id: str):
+        city = await self.repository.get_by_id(city_id)
+
+        if not city:
+            raise HTTPException(status_code=404, detail="City not found.")
+
+        await self.repository.soft_delete(city_id)
+        return {"message": "City deleted successfully."}
+
     def _format(self, city):
         return {
             "id": str(city["_id"]),

@@ -30,3 +30,17 @@ class CityRepository:
         return await self.collection.find({
             "country_code": country_code.upper()
         }).sort("name", 1).to_list(length=1000)
+
+    async def update(self, city_id: str, data: dict):
+        await self.collection.update_one(
+            {"_id": ObjectId(city_id)},
+            {"$set": data},
+        )
+        return await self.get_by_id(city_id)
+
+    async def soft_delete(self, city_id: str):
+        result = await self.collection.update_one(
+            {"_id": ObjectId(city_id)},
+            {"$set": {"is_active": False}},
+        )
+        return result.modified_count > 0
