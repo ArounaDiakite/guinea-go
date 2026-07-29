@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_permission
 from app.modules.transport.drivers.schemas import DriverCreate, DriverResponse
 from app.modules.transport.drivers.service import DriverService
 
@@ -17,7 +17,7 @@ service = DriverService()
 @router.post("/", response_model=DriverResponse)
 async def create_driver(
     data: DriverCreate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("drivers:manage")),
 ):
     return await service.create_driver(data, current_user["sub"])
 
@@ -47,7 +47,7 @@ async def get_driver(driver_id: str):
 async def update_driver(
     driver_id: str,
     data: DriverCreate,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("drivers:manage")),
 ):
     return await service.update_driver(driver_id, data, current_user["sub"])
 
@@ -55,6 +55,6 @@ async def update_driver(
 @router.delete("/{driver_id}")
 async def delete_driver(
     driver_id: str,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("drivers:manage")),
 ):
     return await service.delete_driver(driver_id, current_user["sub"])

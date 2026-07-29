@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from app.core.dependencies import get_current_user, require_permission
+from app.core.dependencies import require_permission
 from app.modules.transport.buses.schemas import BusCreate, BusResponse
 from app.modules.transport.buses.service import BusService
 from app.modules.transport.seats.schemas import SeatResponse
@@ -77,6 +77,6 @@ async def delete_bus(
 @router.post("/{bus_id}/generate-seats", response_model=list[SeatResponse])
 async def generate_seats(
     bus_id: str,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("buses:manage")),
 ):
     return await seat_service.generate_seats(bus_id, current_user["sub"])
