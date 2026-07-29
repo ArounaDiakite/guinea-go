@@ -90,6 +90,20 @@ class _WelcomeCard extends StatelessWidget {
   }
 }
 
+/// One representative photo per module (Unsplash License - free for
+/// commercial use, no attribution required - see assets/images/
+/// modules/) so each shortcut is recognizable at a glance instead of
+/// relying on a generic Material icon. Accueil/Profil never reach this
+/// widget (filtered out in HomeHubScreen.build), so every real
+/// destination.path here has an entry.
+const _moduleImages = {
+  '/hub/transport': 'assets/images/modules/transport.jpg',
+  '/hub/hotels': 'assets/images/modules/hotels.jpg',
+  '/hub/events': 'assets/images/modules/events.jpg',
+  '/hub/commerce': 'assets/images/modules/commerce.jpg',
+  '/hub/education': 'assets/images/modules/education.jpg',
+};
+
 class _ModuleShortcut extends StatelessWidget {
   const _ModuleShortcut({required this.destination});
 
@@ -98,30 +112,51 @@ class _ModuleShortcut extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final imageAsset = _moduleImages[destination.path];
 
     return AppCard(
+      padding: EdgeInsets.zero,
       onTap: () => context.go(destination.path),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(AppRadius.md),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (imageAsset != null)
+              Image.asset(imageAsset, fit: BoxFit.cover)
+            else
+              Container(
+                color: AppColors.primaryLight,
+                child: Icon(destination.selectedIcon, color: AppColors.primary, size: 32),
+              ),
+            // Bottom-anchored scrim so the label stays legible over any
+            // photo, without darkening the whole card.
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Color(0xCC000000)],
+                  stops: [0.4, 1.0],
+                ),
+              ),
             ),
-            child: Icon(destination.selectedIcon, color: AppColors.primary, size: 22),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            destination.label,
-            style: textTheme.titleSmall,
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-          ),
-        ],
+            Positioned(
+              left: AppSpacing.md,
+              right: AppSpacing.md,
+              bottom: AppSpacing.sm,
+              child: Text(
+                destination.label,
+                style: textTheme.titleSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
